@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -14,39 +15,48 @@ class CategoryController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/categories', [
-            'categories' => Category::with('parent')->latest()->get()
+            'categories' => Category::with('parent')->latest()->get(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id'
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'exists:categories,id'],
         ]);
-        $validated['slug'] = Str::slug($validated['name']);
-        
-        Category::create($validated);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Category created']);
+
+        $data['slug'] = Str::slug($data['name']);
+
+        Category::create($data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Category created.']);
+
         return back();
     }
 
-    public function update(Request $request, Category $category)
+    public function update(Request $request, Category $category): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id'
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'exists:categories,id'],
         ]);
-        $validated['slug'] = Str::slug($validated['name']);
 
-        $category->update($validated);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Category updated']);
+        $data['slug'] = Str::slug($data['name']);
+
+        $category->update($data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Category updated.']);
+
         return back();
     }
 
-    public function destroy(Category $category)
+    public function destroy(Category $category): RedirectResponse
     {
         $category->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Category deleted.']);
+
         return back();
     }
 }

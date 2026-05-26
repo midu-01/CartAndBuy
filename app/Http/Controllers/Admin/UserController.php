@@ -13,12 +13,17 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         $query = User::withCount('orders')->latest();
-        
-        if ($request->filled('search')) $query->where('name', 'like', '%' . $request->search . '%');
-        if ($request->filled('role')) $query->where('role', $request->role);
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%'.$request->search.'%');
+        }
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
 
         return Inertia::render('admin/users', [
-            'users' => $query->paginate(15)->withQueryString()
+            'users' => $query->paginate(15)->withQueryString(),
+            'filters' => $request->only(['search', 'role']),
         ]);
     }
 }
