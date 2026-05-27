@@ -47,7 +47,7 @@ export default function AdminReviewsPage({ reviews, filters }: Props) {
                             <th className="px-5 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y text-gray-900">
                         {reviews.data.map((r) => (
                             <tr key={r.id} className="hover:bg-gray-50">
                                 <td className="px-5 py-3 font-medium">{r.user.name}</td>

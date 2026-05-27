@@ -48,7 +48,7 @@ export default function OrderDetailPage({ order }: Props) {
                                             <p className="font-medium text-gray-900">{item.product_name}</p>
                                             <p className="text-sm text-gray-500">Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}</p>
                                         </div>
-                                        <p className="font-bold text-gray-900">${Number(item.total_price).toFixed(2)}</p>
+                                        <p className="font-bold text-gray-900">৳{Number(item.total_price).toFixed(2)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -69,12 +69,12 @@ export default function OrderDetailPage({ order }: Props) {
                     <div>
                         <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3 text-sm">
                             <h2 className="font-semibold text-gray-900">Order Summary</h2>
-                            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>${Number(order.subtotal).toFixed(2)}</span></div>
-                            <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{Number(order.shipping_cost) === 0 ? 'Free' : `$${Number(order.shipping_cost).toFixed(2)}`}</span></div>
+                            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>৳{Number(order.subtotal).toFixed(2)}</span></div>
+                            <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{Number(order.shipping_cost) === 0 ? 'Free' : `৳${Number(order.shipping_cost).toFixed(2)}`}</span></div>
                             {Number(order.discount_amount) > 0 && (
-                                <div className="flex justify-between text-green-600"><span>Discount {order.coupon_code && `(${order.coupon_code})`}</span><span>-${Number(order.discount_amount).toFixed(2)}</span></div>
+                                <div className="flex justify-between text-green-600"><span>Discount {order.coupon_code && `(${order.coupon_code})`}</span><span>-৳{Number(order.discount_amount).toFixed(2)}</span></div>
                             )}
-                            <div className="flex justify-between font-bold text-gray-900 border-t pt-3"><span>Total</span><span>${Number(order.total).toFixed(2)}</span></div>
+                            <div className="flex justify-between font-bold text-gray-900 border-t pt-3"><span>Total</span><span>৳{Number(order.total).toFixed(2)}</span></div>
                             <div className="border-t pt-3 space-y-1 text-gray-500">
                                 <div className="flex justify-between"><span>Payment</span><span className="capitalize">{order.payment_method.toUpperCase()}</span></div>
                                 <div className="flex justify-between"><span>Status</span><Badge className={`border-0 text-xs capitalize ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{order.payment_status}</Badge></div>

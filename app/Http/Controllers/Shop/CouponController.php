@@ -10,15 +10,23 @@ class CouponController extends Controller
 {
     public function validate(Request $request)
     {
-        $validated = $request->validate(['code' => 'required|string']);
-        $coupon = Coupon::where('code', $validated['code'])->first();
+        $request->validate([
+            'code' => 'required|string',
+            'order_total' => 'required|numeric|min:0',
+        ]);
 
-        if (!$coupon) {
-            return response()->json(['valid' => false, 'message' => 'Invalid coupon code'], 422);
+        $coupon = Coupon::where('code', strtoupper($request->code))->first();
+
+        if (! $coupon || ! $coupon->isValid((float) $request->order_total)) {
+            return response()->json(['valid' => false, 'message' => 'Invalid or expired coupon code.'], 422);
         }
 
         return response()->json([
-            'valid' => true, 'code' => $coupon->code, 'type' => $coupon->type, 'value' => $coupon->value
+            'valid' => true,
+            'code' => $coupon->code,
+            'type' => $coupon->type,
+            'value' => $coupon->value,
+            'discount' => $coupon->calculateDiscount((float) $request->order_total),
         ]);
     }
 }

@@ -84,11 +84,11 @@ export default function ProductCard({ product }: Props) {
                     <div>
                         {salePrice ? (
                             <div className="flex items-baseline gap-1.5">
-                                <span className="font-bold text-[#e94560]">${salePrice.toFixed(2)}</span>
-                                <span className="text-xs text-gray-400 line-through">${price.toFixed(2)}</span>
+                                <span className="font-bold text-[#e94560]">৳{salePrice.toFixed(2)}</span>
+                                <span className="text-xs text-gray-400 line-through">৳{price.toFixed(2)}</span>
                             </div>
                         ) : (
-                            <span className="font-bold text-gray-900">${price.toFixed(2)}</span>
+                            <span className="font-bold text-gray-900">৳{price.toFixed(2)}</span>
                         )}
                     </div>
                     <Button size="sm" onClick={addToCart} className="bg-[#1a1a2e] hover:bg-[#0f3460] text-white border-0 text-xs px-3">

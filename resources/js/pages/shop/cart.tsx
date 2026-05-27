@@ -85,7 +85,7 @@ export default function CartPage({ cart }: Props) {
                                     </Link>
                                     <div className="flex-1 min-w-0">
                                         <Link href={`/products/${item.product.slug}`} className="font-medium text-gray-900 hover:text-[#e94560] transition-colors line-clamp-2 text-sm">{item.product.name}</Link>
-                                        <p className="text-[#e94560] font-bold mt-1">${Number(item.price).toFixed(2)}</p>
+                                        <p className="text-[#e94560] font-bold mt-1">৳{Number(item.price).toFixed(2)}</p>
                                         <div className="flex items-center justify-between mt-3">
                                             <div className="flex items-center border rounded-lg overflow-hidden text-sm">
                                                 <button onClick={() => updateQty(item, Math.max(1, item.quantity - 1))} className="px-2 py-1 hover:bg-gray-100"><Minus className="size-3" /></button>
@@ -93,7 +93,7 @@ export default function CartPage({ cart }: Props) {
                                                 <button onClick={() => updateQty(item, Math.min(item.product.stock_qty, item.quantity + 1))} className="px-2 py-1 hover:bg-gray-100"><Plus className="size-3" /></button>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-sm font-semibold">${(Number(item.price) * item.quantity).toFixed(2)}</span>
+                                                <span className="text-sm font-semibold">৳{(Number(item.price) * item.quantity).toFixed(2)}</span>
                                                 <button onClick={() => removeItem(item)} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="size-4" /></button>
                                             </div>
                                         </div>
@@ -134,10 +134,10 @@ export default function CartPage({ cart }: Props) {
                         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
                             <h3 className="font-semibold text-gray-900">Order Summary</h3>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `$${shipping.toFixed(2)}`}</span></div>
-                                {discountAmount > 0 && <div className="flex justify-between text-green-600"><span>Discount ({discount?.code})</span><span>-${discountAmount.toFixed(2)}</span></div>}
-                                <div className="border-t pt-2 flex justify-between font-bold text-gray-900"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>৳{subtotal.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `৳${shipping.toFixed(2)}`}</span></div>
+                                {discountAmount > 0 && <div className="flex justify-between text-green-600"><span>Discount ({discount?.code})</span><span>-৳{discountAmount.toFixed(2)}</span></div>}
+                                <div className="border-t pt-2 flex justify-between font-bold text-gray-900"><span>Total</span><span>৳{total.toFixed(2)}</span></div>
                             </div>
                             <Link href="/checkout">
                                 <Button className="w-full bg-[#e94560] hover:bg-[#c73652] border-0 text-white mt-2">Proceed to Checkout</Button>

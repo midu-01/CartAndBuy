@@ -91,14 +91,14 @@ export default function CheckoutPage({ cart }: Props) {
                                                 <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.product.name}</p>
                                                 <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                                             </div>
-                                            <span className="text-sm font-semibold">${(Number(item.price) * item.quantity).toFixed(2)}</span>
+                                            <span className="text-sm font-semibold">৳{(Number(item.price) * item.quantity).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="border-t pt-4 space-y-2 text-sm">
-                                    <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `$${shipping.toFixed(2)}`}</span></div>
-                                    <div className="flex justify-between font-bold text-gray-900 pt-2 border-t"><span>Total</span><span>${(subtotal + shipping).toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>৳{subtotal.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `৳${shipping.toFixed(2)}`}</span></div>
+                                    <div className="flex justify-between font-bold text-gray-900 pt-2 border-t"><span>Total</span><span>৳{(subtotal + shipping).toFixed(2)}</span></div>
                                 </div>
 
                                 <div className="mt-4">

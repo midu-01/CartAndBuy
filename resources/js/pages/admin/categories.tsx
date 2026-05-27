@@ -62,7 +62,7 @@ export default function AdminCategoriesPage({ categories }: Props) {
             </div>
 
             <Dialog open={showForm} onOpenChange={setShowForm}>
-                <DialogContent className="max-w-sm">
+                <DialogContent className="max-w-sm bg-white text-gray-900">
                     <DialogHeader><DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle></DialogHeader>
                     <form onSubmit={submit} className="space-y-4 mt-2">
                         <div>
@@ -78,7 +78,7 @@ export default function AdminCategoriesPage({ categories }: Props) {
                             </select>
                         </div>
                         <div className="flex justify-end gap-2">
-                            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50">Cancel</Button>
                             <Button type="submit" disabled={form.processing} className="bg-[#e94560] hover:bg-[#c73652] border-0 text-white">{editing ? 'Update' : 'Create'}</Button>
                         </div>
                     </form>

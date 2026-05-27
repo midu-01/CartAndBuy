@@ -4,6 +4,8 @@ use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
 
+require __DIR__.'/admin.php';
+
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
@@ -17,4 +19,3 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 
 require __DIR__.'/shop.php';
-require __DIR__.'/admin.php';

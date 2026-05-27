@@ -96,7 +96,7 @@ export default function ProductsPage({ products, categories, filters }: Props) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">
-                            {filters.search ? `Results for "${filters.search}"` : filters.category ? categories.flatMap(c => [c, ...c.children]).find(c => c.slug === filters.category)?.name ?? 'Products' : 'All Products'}
+                            {filters.search ? `Results for "${filters.search}"` : filters.category ? categories.flatMap(c => [c, ...(c.children ?? [])]).find(c => c.slug === filters.category)?.name ?? 'Products' : 'All Products'}
                         </h1>
                         <p className="text-sm text-gray-500 mt-0.5">{products.total} products found</p>
                     </div>

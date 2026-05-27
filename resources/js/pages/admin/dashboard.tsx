@@ -19,7 +19,7 @@ export default function AdminDashboardPage({ stats, recentOrders, topProducts, m
     const maxRevenue = Math.max(...monthlyRevenue.map((m) => Number(m.revenue)), 1);
 
     const statCards = [
-        { label: 'Total Revenue', value: `$${Number(stats.revenue).toLocaleString('en', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
+        { label: 'Total Revenue', value: `৳${Number(stats.revenue).toLocaleString('en', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
         { label: 'Total Orders', value: stats.orders, icon: ShoppingCart, color: 'bg-blue-100 text-blue-600' },
         { label: 'Active Products', value: stats.products, icon: Package, color: 'bg-purple-100 text-purple-600' },
         { label: 'Customers', value: stats.customers, icon: Users, color: 'bg-amber-100 text-amber-600' },
@@ -52,8 +52,8 @@ export default function AdminDashboardPage({ stats, recentOrders, topProducts, m
                         <div className="flex items-end gap-2 h-40">
                             {monthlyRevenue.map((m) => (
                                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                                    <span className="text-xs text-gray-500">${Math.round(Number(m.revenue))}</span>
-                                    <div className="w-full bg-[#1a1a2e] rounded-t-sm transition-all hover:bg-[#e94560]" style={{ height: `${(Number(m.revenue) / maxRevenue) * 120}px`, minHeight: '4px' }} title={`$${Number(m.revenue).toFixed(2)}`} />
+                                    <span className="text-xs text-gray-500">৳{Math.round(Number(m.revenue))}</span>
+                                    <div className="w-full bg-[#1a1a2e] rounded-t-sm transition-all hover:bg-[#e94560]" style={{ height: `${(Number(m.revenue) / maxRevenue) * 120}px`, minHeight: '4px' }} title={`৳${Number(m.revenue).toFixed(2)}`} />
                                     <span className="text-xs text-gray-400 truncate w-full text-center">{m.month.slice(5)}</span>
                                 </div>
                             ))}
@@ -75,7 +75,7 @@ export default function AdminDashboardPage({ stats, recentOrders, topProducts, m
                                         <p className="text-sm font-medium text-gray-900 truncate">{p.product_name}</p>
                                         <p className="text-xs text-gray-400">{p.total_sold} sold</p>
                                     </div>
-                                    <span className="text-sm font-bold text-gray-900">${Number(p.revenue).toFixed(0)}</span>
+                                    <span className="text-sm font-bold text-gray-900">৳{Number(p.revenue).toFixed(0)}</span>
                                 </div>
                             ))}
                         </div>
@@ -100,13 +100,13 @@ export default function AdminDashboardPage({ stats, recentOrders, topProducts, m
                                 <th className="px-5 py-3 text-left">Date</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y">
+                        <tbody className="divide-y text-gray-900">
                             {recentOrders.map((order) => (
                                 <tr key={order.id} className="hover:bg-gray-50">
                                     <td className="px-5 py-3"><Link href={`/admin/orders/${order.id}`} className="text-[#e94560] hover:underline font-medium">#{order.id}</Link></td>
                                     <td className="px-5 py-3"><div className="font-medium">{order.user.name}</div><div className="text-xs text-gray-400">{order.user.email}</div></td>
                                     <td className="px-5 py-3"><Badge className={`border-0 capitalize ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>{order.status}</Badge></td>
-                                    <td className="px-5 py-3 text-right font-bold">${Number(order.total).toFixed(2)}</td>
+                                    <td className="px-5 py-3 text-right font-bold">৳{Number(order.total).toFixed(2)}</td>
                                     <td className="px-5 py-3 text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
                                 </tr>
                             ))}

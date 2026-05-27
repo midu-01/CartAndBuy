@@ -56,14 +56,14 @@ export default function AdminOrdersPage({ orders, filters }: Props) {
                                 <th className="px-5 py-3 text-left">Date</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y">
+                        <tbody className="divide-y text-gray-900">
                             {orders.data.map((order) => (
                                 <tr key={order.id} className="hover:bg-gray-50">
                                     <td className="px-5 py-3"><Link href={`/admin/orders/${order.id}`} className="text-[#e94560] hover:underline font-medium">#{order.id}</Link></td>
                                     <td className="px-5 py-3"><div className="font-medium">{order.user.name}</div><div className="text-xs text-gray-400">{order.user.email}</div></td>
                                     <td className="px-5 py-3"><Badge className={`border-0 capitalize ${statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}`}>{order.status}</Badge></td>
                                     <td className="px-5 py-3"><Badge className={`border-0 capitalize ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{order.payment_status}</Badge></td>
-                                    <td className="px-5 py-3 text-right font-bold">${Number(order.total).toFixed(2)}</td>
+                                    <td className="px-5 py-3 text-right font-bold text-gray-900">৳{Number(order.total).toFixed(2)}</td>
                                     <td className="px-5 py-3 text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
                                 </tr>
                             ))}

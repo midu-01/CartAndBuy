@@ -39,7 +39,7 @@ export default function OrderHistoryPage({ orders }: Props) {
                                             <p className="text-sm text-gray-500 mt-0.5">{order.items.length} item{order.items.length !== 1 ? 's' : ''} · {new Date(order.created_at).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className="font-bold text-gray-900">${Number(order.total).toFixed(2)}</span>
+                                            <span className="font-bold text-gray-900">৳{Number(order.total).toFixed(2)}</span>
                                             <Badge className={`border-0 capitalize ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>{order.status}</Badge>
                                         </div>
                                     </div>

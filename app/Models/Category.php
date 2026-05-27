@@ -3,25 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'slug', 'image', 'parent_id'])]
 class Category extends Model
 {
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Category, $this> */
-    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    use HasFactory;
+
+    /** @return BelongsTo<Category, $this> */
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Category, $this> */
-    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<Category, $this> */
+    public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Product, $this> */
-    public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<Product, $this> */
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }

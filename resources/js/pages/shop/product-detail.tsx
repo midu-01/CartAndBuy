@@ -89,12 +89,12 @@ export default function ProductDetailPage({ product, relatedProducts, averageRat
                         <div className="flex items-baseline gap-3">
                             {salePrice ? (
                                 <>
-                                    <span className="text-4xl font-bold text-[#e94560]">${salePrice.toFixed(2)}</span>
-                                    <span className="text-xl text-gray-400 line-through">${price.toFixed(2)}</span>
+                                    <span className="text-4xl font-bold text-[#e94560]">৳{salePrice.toFixed(2)}</span>
+                                    <span className="text-xl text-gray-400 line-through">৳{price.toFixed(2)}</span>
                                     <Badge className="bg-[#e94560] text-white border-0">-{Math.round(((price - salePrice) / price) * 100)}% OFF</Badge>
                                 </>
                             ) : (
-                                <span className="text-4xl font-bold text-gray-900">${price.toFixed(2)}</span>
+                                <span className="text-4xl font-bold text-gray-900">৳{price.toFixed(2)}</span>
                             )}
                         </div>
 

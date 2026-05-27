@@ -3,19 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['user_id', 'session_id'])]
 class Cart extends Model
 {
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<User, $this> */
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    use HasFactory;
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<CartItem, $this> */
-    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<CartItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
     }

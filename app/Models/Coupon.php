@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['code', 'type', 'value', 'min_order', 'max_uses', 'used_count', 'expires_at', 'is_active'])]
 class Coupon extends Model
 {
+    use HasFactory;
+
     protected function casts(): array
     {
         return [

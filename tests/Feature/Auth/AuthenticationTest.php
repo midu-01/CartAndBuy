@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
@@ -31,7 +32,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
     }
 
     public function test_passkey_login_response_redirects_to_the_current_team_dashboard(): void
@@ -44,6 +45,7 @@ class AuthenticationTest extends TestCase
         $request->setLaravelSession($this->app['session.store']);
         $request->setUserResolver(fn () => $user);
 
+        /** @var JsonResponse $jsonResponse */
         $jsonResponse = app(PasskeyLoginResponse::class)->toResponse($request);
 
         $this->assertSame(

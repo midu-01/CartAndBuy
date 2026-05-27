@@ -4,11 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'slug', 'description', 'price', 'sale_price', 'stock_qty', 'category_id', 'images', 'is_featured', 'is_active'])]
 class Product extends Model
 {
+    use HasFactory;
+
     protected function casts(): array
     {
         return [
@@ -20,32 +25,32 @@ class Product extends Model
         ];
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Category, $this> */
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Review, $this> */
-    public function reviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<Review, $this> */
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<CartItem, $this> */
-    public function cartItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<CartItem, $this> */
+    public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\OrderItem, $this> */
-    public function orderItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<OrderItem, $this> */
+    public function orderItems(): HasMany
     {
-        return $this->hasMany(\App\Models\OrderItem::class);
+        return $this->hasMany(OrderItem::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Wishlist, $this> */
-    public function wishlists(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /** @return HasMany<Wishlist, $this> */
+    public function wishlists(): HasMany
     {
         return $this->hasMany(Wishlist::class);
     }

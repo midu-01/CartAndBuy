@@ -49,15 +49,15 @@ export default function AdminUsersPage({ users, filters }: Props) {
                             <th className="px-5 py-3 text-left">Joined</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y text-gray-900">
                         {users.data.map((user) => (
                             <tr key={user.id} className="hover:bg-gray-50">
-                                <td className="px-5 py-3 font-medium">{user.name}</td>
+                                <td className="px-5 py-3 font-medium text-gray-900">{user.name}</td>
                                 <td className="px-5 py-3 text-gray-500">{user.email}</td>
                                 <td className="px-5 py-3 text-center">
                                     <Badge className={`border-0 capitalize ${user.role === 'admin' ? 'bg-[#e94560] text-white' : 'bg-gray-100 text-gray-700'}`}>{user.role}</Badge>
                                 </td>
-                                <td className="px-5 py-3 text-center font-bold">{user.orders_count}</td>
+                                <td className="px-5 py-3 text-center font-bold text-gray-900">{user.orders_count}</td>
                                 <td className="px-5 py-3 text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
                             </tr>
                         ))}

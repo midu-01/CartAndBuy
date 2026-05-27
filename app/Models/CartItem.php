@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['cart_id', 'product_id', 'quantity', 'price'])]
 class CartItem extends Model
 {
+    use HasFactory;
+
     protected function casts(): array
     {
         return [
@@ -15,14 +19,14 @@ class CartItem extends Model
         ];
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Cart, $this> */
-    public function cart(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Cart, $this> */
+    public function cart(): BelongsTo
     {
         return $this->belongsTo(Cart::class);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Product, $this> */
-    public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    /** @return BelongsTo<Product, $this> */
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }

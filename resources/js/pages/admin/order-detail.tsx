@@ -58,8 +58,8 @@ export default function AdminOrderDetailPage({ order }: Props) {
                                     <tr key={item.id}>
                                         <td className="px-5 py-3 font-medium">{item.product_name}</td>
                                         <td className="px-5 py-3 text-center">{item.quantity}</td>
-                                        <td className="px-5 py-3 text-right">${Number(item.unit_price).toFixed(2)}</td>
-                                        <td className="px-5 py-3 text-right font-bold">${Number(item.total_price).toFixed(2)}</td>
+                                        <td className="px-5 py-3 text-right">৳{Number(item.unit_price).toFixed(2)}</td>
+                                        <td className="px-5 py-3 text-right font-bold">৳{Number(item.total_price).toFixed(2)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -77,10 +77,10 @@ export default function AdminOrderDetailPage({ order }: Props) {
                 <div className="space-y-4">
                     <div className="bg-white border rounded-xl p-5 space-y-3 text-sm">
                         <h3 className="font-semibold">Summary</h3>
-                        <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>${Number(order.subtotal).toFixed(2)}</span></div>
-                        <div className="flex justify-between text-gray-600"><span>Shipping</span><span>${Number(order.shipping_cost).toFixed(2)}</span></div>
-                        {Number(order.discount_amount) > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${Number(order.discount_amount).toFixed(2)}</span></div>}
-                        <div className="flex justify-between font-bold border-t pt-2"><span>Total</span><span>${Number(order.total).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>৳{Number(order.subtotal).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-gray-600"><span>Shipping</span><span>৳{Number(order.shipping_cost).toFixed(2)}</span></div>
+                        {Number(order.discount_amount) > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-৳{Number(order.discount_amount).toFixed(2)}</span></div>}
+                        <div className="flex justify-between font-bold border-t pt-2"><span>Total</span><span>৳{Number(order.total).toFixed(2)}</span></div>
                         <div className="border-t pt-2 space-y-1 text-gray-500">
                             <div className="flex justify-between"><span>Payment</span><span className="uppercase">{order.payment_method}</span></div>
                             <div className="flex justify-between"><span>Status</span><Badge className={`border-0 capitalize text-xs ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{order.payment_status}</Badge></div>

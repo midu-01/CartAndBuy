@@ -13,7 +13,7 @@ class ReviewController extends Controller
     {
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000'
+            'comment' => 'nullable|string|max:1000',
         ]);
 
         $product->reviews()->updateOrCreate(
@@ -22,6 +22,7 @@ class ReviewController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Review submitted and awaits approval.']);
+
         return back();
     }
 }

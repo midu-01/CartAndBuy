@@ -46,13 +46,13 @@ export default function AdminCouponsPage({ coupons }: Props) {
                             <th className="px-5 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y text-gray-900">
                         {coupons.map((c) => (
                             <tr key={c.id} className="hover:bg-gray-50">
                                 <td className="px-5 py-3 font-mono font-bold text-[#1a1a2e]">{c.code}</td>
-                                <td className="px-5 py-3">{c.type === 'percent' ? `${c.value}% off` : `$${Number(c.value).toFixed(2)} off`}</td>
-                                <td className="px-5 py-3 text-center">${Number(c.min_order).toFixed(2)}</td>
-                                <td className="px-5 py-3 text-center">{c.used_count}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
+                                <td className="px-5 py-3 text-gray-700">{c.type === 'percent' ? `${c.value}% off` : `৳${Number(c.value).toFixed(2)} off`}</td>
+                                <td className="px-5 py-3 text-center text-gray-700">৳{Number(c.min_order).toFixed(2)}</td>
+                                <td className="px-5 py-3 text-center text-gray-700">{c.used_count}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
                                 <td className="px-5 py-3 text-gray-500">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—'}</td>
                                 <td className="px-5 py-3 text-center"><Badge className={`border-0 ${c.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{c.is_active ? 'Active' : 'Inactive'}</Badge></td>
                                 <td className="px-5 py-3 text-center">
@@ -69,28 +69,49 @@ export default function AdminCouponsPage({ coupons }: Props) {
             </div>
 
             <Dialog open={showForm} onOpenChange={setShowForm}>
-                <DialogContent className="max-w-sm">
+                <DialogContent className="max-w-sm bg-white text-gray-900">
                     <DialogHeader><DialogTitle>{editing ? 'Edit Coupon' : 'Add Coupon'}</DialogTitle></DialogHeader>
                     <form onSubmit={submit} className="space-y-3 mt-2">
-                        {[{ name: 'code', label: 'Code' }, { name: 'value', label: 'Value', type: 'number' }, { name: 'min_order', label: 'Min Order ($)', type: 'number' }, { name: 'max_uses', label: 'Max Uses (blank = unlimited)' }, { name: 'expires_at', label: 'Expires At', type: 'date' }].map(({ name, label, type = 'text' }) => (
-                            <div key={name}>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                                <input type={type} value={(form.data as Record<string, string>)[name]} onChange={(e) => form.setData(name as keyof typeof form.data, e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
-                            </div>
-                        ))}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                            <input type="text" value={form.data.code} onChange={(e) => form.setData('code', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            {form.errors.code && <p className="text-xs text-red-500 mt-1">{form.errors.code}</p>}
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                            <select value={form.data.type} onChange={(e) => form.setData('type', e.target.value as 'percent' | 'fixed')} className="w-full border rounded-lg px-3 py-2 text-sm">
-                                <option value="percent">Percent (%)</option>
-                                <option value="fixed">Fixed ($)</option>
+                            <select value={form.data.type} onChange={(e) => form.setData('type', e.target.value as 'percent' | 'fixed')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]">
+                                <option value="percent">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (৳)</option>
                             </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {form.data.type === 'percent' ? 'Discount Value (%)' : 'Discount Amount (৳)'}
+                            </label>
+                            <input type="number" min="0" step="any" value={form.data.value} onChange={(e) => form.setData('value', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            {form.errors.value && <p className="text-xs text-red-500 mt-1">{form.errors.value}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Amount (৳)</label>
+                            <input type="number" min="0" step="any" value={form.data.min_order} onChange={(e) => form.setData('min_order', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            {form.errors.min_order && <p className="text-xs text-red-500 mt-1">{form.errors.min_order}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses <span className="text-gray-400 font-normal">(leave blank for unlimited)</span></label>
+                            <input type="number" min="1" step="1" value={form.data.max_uses} onChange={(e) => form.setData('max_uses', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            {form.errors.max_uses && <p className="text-xs text-red-500 mt-1">{form.errors.max_uses}</p>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At <span className="text-gray-400 font-normal">(optional)</span></label>
+                            <input type="date" value={form.data.expires_at} onChange={(e) => form.setData('expires_at', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            {form.errors.expires_at && <p className="text-xs text-red-500 mt-1">{form.errors.expires_at}</p>}
                         </div>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
                             <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
                             Active
                         </label>
                         <div className="flex justify-end gap-2 pt-1">
-                            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50">Cancel</Button>
                             <Button type="submit" disabled={form.processing} className="bg-[#e94560] hover:bg-[#c73652] border-0 text-white">{editing ? 'Update' : 'Create'}</Button>
                         </div>
                     </form>
