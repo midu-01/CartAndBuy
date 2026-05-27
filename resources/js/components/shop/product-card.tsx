@@ -76,17 +76,14 @@ export default function ProductCard({ product }: Props) {
                     {product.name}
                 </Link>
                 <div className="flex items-center gap-1 mb-3 mt-auto">
-                    {[1,2,3,4,5].map((s) => (
+                    {[1, 2, 3, 4, 5].map((s) => (
                         <Star key={s} className={cn('size-3', s <= 4 ? 'text-amber-400 fill-current' : 'text-gray-200 fill-current')} />
                     ))}
                 </div>
                 <div className="flex items-center justify-between gap-2">
                     <div>
                         {salePrice ? (
-                            <div className="flex items-baseline gap-1.5">
-                                <span className="font-bold text-[#e94560]">৳{salePrice.toFixed(2)}</span>
-                                <span className="text-xs text-gray-400 line-through">৳{price.toFixed(2)}</span>
-                            </div>
+                            <span className="font-bold text-[#e94560]">৳{salePrice.toFixed(2)}</span>
                         ) : (
                             <span className="font-bold text-gray-900">৳{price.toFixed(2)}</span>
                         )}

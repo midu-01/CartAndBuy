@@ -74,12 +74,12 @@ export default function AdminCouponsPage({ coupons }: Props) {
                     <form onSubmit={submit} className="space-y-3 mt-2">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                            <input type="text" value={form.data.code} onChange={(e) => form.setData('code', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            <input type="text" value={form.data.code} onChange={(e) => form.setData('code', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                             {form.errors.code && <p className="text-xs text-red-500 mt-1">{form.errors.code}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                            <select value={form.data.type} onChange={(e) => form.setData('type', e.target.value as 'percent' | 'fixed')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]">
+                            <select value={form.data.type} onChange={(e) => form.setData('type', e.target.value as 'percent' | 'fixed')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900">
                                 <option value="percent">Percentage (%)</option>
                                 <option value="fixed">Fixed Amount (৳)</option>
                             </select>
@@ -88,22 +88,22 @@ export default function AdminCouponsPage({ coupons }: Props) {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 {form.data.type === 'percent' ? 'Discount Value (%)' : 'Discount Amount (৳)'}
                             </label>
-                            <input type="number" min="0" step="any" value={form.data.value} onChange={(e) => form.setData('value', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            <input type="number" min="0" step="any" value={form.data.value} onChange={(e) => form.setData('value', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                             {form.errors.value && <p className="text-xs text-red-500 mt-1">{form.errors.value}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Amount (৳)</label>
-                            <input type="number" min="0" step="any" value={form.data.min_order} onChange={(e) => form.setData('min_order', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            <input type="number" min="0" step="any" value={form.data.min_order} onChange={(e) => form.setData('min_order', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                             {form.errors.min_order && <p className="text-xs text-red-500 mt-1">{form.errors.min_order}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses <span className="text-gray-400 font-normal">(leave blank for unlimited)</span></label>
-                            <input type="number" min="1" step="1" value={form.data.max_uses} onChange={(e) => form.setData('max_uses', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            <input type="number" min="1" step="1" value={form.data.max_uses} onChange={(e) => form.setData('max_uses', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                             {form.errors.max_uses && <p className="text-xs text-red-500 mt-1">{form.errors.max_uses}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Expires At <span className="text-gray-400 font-normal">(optional)</span></label>
-                            <input type="date" value={form.data.expires_at} onChange={(e) => form.setData('expires_at', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                            <input type="date" value={form.data.expires_at} onChange={(e) => form.setData('expires_at', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                             {form.errors.expires_at && <p className="text-xs text-red-500 mt-1">{form.errors.expires_at}</p>}
                         </div>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">

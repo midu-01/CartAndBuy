@@ -1,9 +1,21 @@
 <?php
 
-use App\Http\Controllers\Shop\{HomeController, ProductController, CartController, OrderController, ReviewController, WishlistController, CouponController};
+use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\CouponController;
+use App\Http\Controllers\Shop\HomeController;
+use App\Http\Controllers\Shop\OrderController;
+use App\Http\Controllers\Shop\ProductController;
+use App\Http\Controllers\Shop\ReviewController;
+use App\Http\Controllers\Shop\SupportController;
+use App\Http\Controllers\Shop\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Support pages
+Route::get('/help-center', [SupportController::class, 'helpCenter'])->name('help-center');
+Route::get('/contact', [SupportController::class, 'contact'])->name('contact');
+Route::get('/returns', [SupportController::class, 'returns'])->name('returns');
 Route::get('/shop', [ProductController::class, 'index'])->name('shop.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
@@ -20,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');

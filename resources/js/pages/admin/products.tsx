@@ -53,24 +53,22 @@ export default function AdminProductsPage({ products, categories, filters }: Pro
         if (confirm(`Delete "${p.name}"?`)) router.delete(`/admin/products/${p.id}`, { preserveScroll: true });
     }
 
-    function doSearch(e: React.FormEvent) {
-        e.preventDefault();
-        router.get('/admin/products', { search: search || undefined }, { preserveScroll: true });
+    function doSearch(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') {
+            router.get('/admin/products', { search: search || undefined }, { preserveScroll: true });
+        }
     }
 
     return (
         <AdminLayout>
             <Head title="Products — Admin" />
 
-            <div className="flex items-center justify-between mb-6">
-                <form onSubmit={doSearch} className="flex gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products…" className="border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] w-64" />
-                    </div>
-                    <Button type="submit" variant="outline" size="sm">Search</Button>
-                </form>
-                <Button onClick={openCreate} className="bg-[#e94560] hover:bg-[#c73652] border-0 text-white"><Plus className="size-4 mr-1" /> Add Product</Button>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={doSearch} placeholder="Search products…" className="w-full border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
+                </div>
+                <Button onClick={openCreate} className="bg-[#e94560] hover:bg-[#c73652] border-0 text-white shrink-0"><Plus className="size-4 mr-1" /> Add Product</Button>
             </div>
 
             <div className="bg-white rounded-xl border overflow-hidden">
@@ -136,16 +134,16 @@ export default function AdminProductsPage({ products, categories, filters }: Pro
                             <div key={f}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{f.replace('_', ' ')}</label>
                                 {f === 'description' ? (
-                                    <textarea value={form.data[f]} onChange={(e) => form.setData(f, e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                                    <textarea value={form.data[f]} onChange={(e) => form.setData(f, e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                                 ) : (
-                                    <input type={['price', 'sale_price', 'stock_qty'].includes(f) ? 'number' : 'text'} value={form.data[f]} onChange={(e) => form.setData(f, e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560]" />
+                                    <input type={['price', 'sale_price', 'stock_qty'].includes(f) ? 'number' : 'text'} value={form.data[f]} onChange={(e) => form.setData(f, e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#e94560] bg-white text-gray-900" />
                                 )}
                                 {form.errors[f] && <p className="text-xs text-red-500 mt-1">{form.errors[f]}</p>}
                             </div>
                         ))}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                            <select value={form.data.category_id} onChange={(e) => form.setData('category_id', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            <select value={form.data.category_id} onChange={(e) => form.setData('category_id', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white text-gray-900">
                                 <option value="">— None —</option>
                                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>

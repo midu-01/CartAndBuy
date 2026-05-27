@@ -235,4 +235,74 @@ class OrderTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    // --- Cancel order ---
+
+    public function test_user_can_cancel_pending_order(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->patch(route('orders.cancel', $order));
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
+    public function test_cancelling_order_restores_product_stock(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['stock_qty' => 8]);
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'unit_price' => $product->price,
+            'total_price' => $product->price * 2,
+        ]);
+
+        $this->actingAs($user)->patch(route('orders.cancel', $order));
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'stock_qty' => 10, // 8 + 2 restored
+        ]);
+    }
+
+    public function test_user_cannot_cancel_non_pending_order(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->delivered()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->patch(route('orders.cancel', $order));
+
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'delivered',
+        ]);
+    }
+
+    public function test_user_cannot_cancel_another_users_order(): void
+    {
+        $user = User::factory()->create();
+        $order = Order::factory()->pending()->create(); // different user
+
+        $response = $this->actingAs($user)->patch(route('orders.cancel', $order));
+
+        $response->assertForbidden();
+    }
+
+    public function test_guest_cannot_cancel_order(): void
+    {
+        $order = Order::factory()->pending()->create();
+
+        $response = $this->patch(route('orders.cancel', $order));
+
+        $response->assertRedirect(route('login'));
+    }
 }

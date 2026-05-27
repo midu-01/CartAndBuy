@@ -1,7 +1,10 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, XCircle } from 'lucide-react';
 import ShopLayout from '@/layouts/shop-layout';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 interface OrderItem { id: number; product_name: string; quantity: number; unit_price: string; total_price: string; product: { images: string[] | null } | null }
 interface ShippingAddress { first_name: string; last_name: string; address: string; city: string; state: string; zip: string; country: string; email: string; phone: string }
@@ -16,6 +19,18 @@ const statusColors: Record<string, string> = {
 
 export default function OrderDetailPage({ order }: Props) {
     const addr = order.shipping_address;
+    const [cancelling, setCancelling] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+    function handleCancel() {
+        setCancelling(true);
+        router.patch(`/orders/${order.id}/cancel`, {}, {
+            onFinish: () => {
+                setCancelling(false);
+                setDialogOpen(false);
+            },
+        });
+    }
 
     return (
         <ShopLayout>
@@ -30,7 +45,42 @@ export default function OrderDetailPage({ order }: Props) {
                         <h1 className="text-2xl font-bold text-gray-900">Order #{order.id}</h1>
                         <p className="text-sm text-gray-500 mt-0.5">Placed on {new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
-                    <Badge className={`border-0 capitalize text-sm ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>{order.status}</Badge>
+                    <div className="flex items-center gap-3">
+                        <Badge className={`border-0 capitalize text-sm ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>{order.status}</Badge>
+                        {order.status === 'pending' && (
+                            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button id="cancel-order-trigger" variant="destructive" size="sm" className="gap-1.5">
+                                        <XCircle className="size-4" />
+                                        Cancel Order
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Cancel Order #{order.id}?</DialogTitle>
+                                        <DialogDescription>
+                                            This action cannot be undone. Your order will be cancelled and the items will be restocked.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button variant="outline" disabled={cancelling}>
+                                                Keep Order
+                                            </Button>
+                                        </DialogClose>
+                                        <Button
+                                            id="confirm-cancel-order"
+                                            variant="destructive"
+                                            onClick={handleCancel}
+                                            disabled={cancelling}
+                                        >
+                                            {cancelling ? 'Cancelling…' : 'Yes, Cancel Order'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -86,3 +136,4 @@ export default function OrderDetailPage({ order }: Props) {
         </ShopLayout>
     );
 }
+

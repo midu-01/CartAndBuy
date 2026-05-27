@@ -32,9 +32,9 @@ export default function AdminUsersPage({ users, filters }: Props) {
                 <form onSubmit={(e) => { e.preventDefault(); applyFilter({ search: search || undefined }); }} className="flex gap-2 ml-auto">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users…" className="border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none w-52" />
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users…" className="border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none w-52 bg-white text-gray-900" />
                     </div>
-                    <Button type="submit" variant="outline" size="sm">Search</Button>
+                    <Button type="submit" variant="outline" size="sm" className="bg-white text-gray-700 border-gray-300 hover:bg-gray-50">Search</Button>
                 </form>
             </div>
 

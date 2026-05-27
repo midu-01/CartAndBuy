@@ -18,7 +18,7 @@ export default function CartPage({ cart }: Props) {
 
     const items = cart?.items ?? [];
     const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-    const shipping = subtotal >= 100 || subtotal === 0 ? 0 : 9.99;
+    const shipping = subtotal >= 2000 ? 0 : 130;
     const discountAmount = discount?.amount ?? 0;
     const total = Math.max(0, subtotal + shipping - discountAmount);
 
@@ -135,7 +135,7 @@ export default function CartPage({ cart }: Props) {
                             <h3 className="font-semibold text-gray-900">Order Summary</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>৳{subtotal.toFixed(2)}</span></div>
-                                <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `৳${shipping.toFixed(2)}`}</span></div>
+                                <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{shipping === 0 ? <span className="text-green-600">Free</span> : `৳${shipping}`}</span></div>
                                 {discountAmount > 0 && <div className="flex justify-between text-green-600"><span>Discount ({discount?.code})</span><span>-৳{discountAmount.toFixed(2)}</span></div>}
                                 <div className="border-t pt-2 flex justify-between font-bold text-gray-900"><span>Total</span><span>৳{total.toFixed(2)}</span></div>
                             </div>

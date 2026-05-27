@@ -19,7 +19,11 @@ class ProductController extends Controller
             $query->where('name', 'like', '%'.$request->search.'%');
         }
         if ($request->filled('category')) {
-            $query->whereHas('category', fn ($q) => $q->where('slug', $request->category));
+            $category = Category::where('slug', $request->category)->with('children')->first();
+            if ($category) {
+                $ids = collect([$category->id])->merge($category->children->pluck('id'));
+                $query->whereIn('category_id', $ids);
+            }
         }
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);

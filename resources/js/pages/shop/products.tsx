@@ -51,25 +51,34 @@ export default function ProductsPage({ products, categories, filters }: Props) {
                 >
                     All Products
                 </button>
-                {categories.map((cat) => (
-                    <div key={cat.id}>
-                        <button
-                            onClick={() => applyFilter({ category: cat.slug })}
-                            className={cn('block w-full text-left py-1.5 px-3 rounded-lg text-sm transition-colors', filters.category === cat.slug ? 'bg-[#1a1a2e] text-white' : 'hover:bg-gray-100 text-gray-700')}
-                        >
-                            {cat.name}
-                        </button>
-                        {cat.children?.map((child) => (
-                            <button
-                                key={child.id}
-                                onClick={() => applyFilter({ category: child.slug })}
-                                className={cn('block w-full text-left py-1.5 pl-6 pr-3 rounded-lg text-sm transition-colors', filters.category === child.slug ? 'bg-[#e94560] text-white' : 'hover:bg-gray-100 text-gray-600')}
-                            >
-                                {child.name}
-                            </button>
-                        ))}
-                    </div>
-                ))}
+                {categories.map((cat) => {
+                    const hasChildren = cat.children.length > 0;
+                    return (
+                        <div key={cat.id}>
+                            {hasChildren ? (
+                                <button
+                                    onClick={() => applyFilter({ category: cat.slug })}
+                                    className={cn('block w-full text-left py-1.5 px-3 rounded-lg text-sm font-medium transition-colors', filters.category === cat.slug ? 'bg-[#1a1a2e] text-white' : 'hover:bg-gray-100 text-gray-700')}
+                                >
+                                    {cat.name}
+                                </button>
+                            ) : (
+                                <span className="block py-1.5 px-3 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                    {cat.name}
+                                </span>
+                            )}
+                            {cat.children?.map((child) => (
+                                <button
+                                    key={child.id}
+                                    onClick={() => applyFilter({ category: child.slug })}
+                                    className={cn('block w-full text-left py-1.5 pl-6 pr-3 rounded-lg text-sm transition-colors', filters.category === child.slug ? 'bg-[#e94560] text-white' : 'hover:bg-gray-100 text-gray-600')}
+                                >
+                                    {child.name}
+                                </button>
+                            ))}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Price */}

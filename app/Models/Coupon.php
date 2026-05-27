@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['code', 'type', 'value', 'min_order', 'max_uses', 'used_count', 'expires_at', 'is_active'])]
+#[Fillable(['code', 'type', 'value', 'max_discount', 'min_order', 'max_uses', 'used_count', 'expires_at', 'is_active'])]
 class Coupon extends Model
 {
     use HasFactory;
@@ -16,6 +16,7 @@ class Coupon extends Model
     {
         return [
             'value' => 'decimal:2',
+            'max_discount' => 'decimal:2',
             'min_order' => 'decimal:2',
             'expires_at' => 'datetime',
             'is_active' => 'boolean',
@@ -45,11 +46,20 @@ class Coupon extends Model
 
     public function calculateDiscount(float $orderTotal): float
     {
-        if ($this->type === 'percent') {
-            return round($orderTotal * ($this->value / 100), 2);
+        $discount = $this->type === 'percent'
+            ? round($orderTotal * ($this->value / 100), 2)
+            : min((float) $this->value, $orderTotal);
+
+        if ($this->max_discount) {
+            $discount = min($discount, (float) $this->max_discount);
         }
 
-        return min((float) $this->value, $orderTotal);
+        return $discount;
+    }
+
+    public function hasBeenUsedByUser(int $userId): bool
+    {
+        return Order::where('user_id', $userId)->where('coupon_code', $this->code)->exists();
     }
 
     /** @param Builder<Coupon> $query */

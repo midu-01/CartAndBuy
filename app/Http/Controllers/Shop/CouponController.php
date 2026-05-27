@@ -21,6 +21,11 @@ class CouponController extends Controller
             return response()->json(['valid' => false, 'message' => 'Invalid or expired coupon code.'], 422);
         }
 
+        $user = $request->user();
+        if ($user && $coupon->hasBeenUsedByUser($user->id)) {
+            return response()->json(['valid' => false, 'message' => 'You have already used this coupon.'], 422);
+        }
+
         return response()->json([
             'valid' => true,
             'code' => $coupon->code,

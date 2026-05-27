@@ -33,7 +33,7 @@ export default function AdminOrderDetailPage({ order }: Props) {
                     <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleString()} · Customer: <span className="font-medium">{order.user.name}</span></p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm focus:outline-none bg-white text-gray-900">
                         {statuses.map((s) => <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                     </select>
                     <Button onClick={updateStatus} className="bg-[#1a1a2e] hover:bg-[#0f3460] border-0 text-white" disabled={status === order.status}>Update Status</Button>

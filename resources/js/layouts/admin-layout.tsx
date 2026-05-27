@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, [flashToast]);
 
     return (
-        <div className="min-h-screen flex bg-gray-100">
+        <div className="min-h-screen flex bg-gray-100 text-gray-900">
             {/* Sidebar */}
             <aside className="w-64 bg-[#1a1a2e] text-white flex flex-col fixed inset-y-0 z-10">
                 <div className="px-6 py-5 border-b border-white/10">
