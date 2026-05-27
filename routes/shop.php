@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Shop\AiAssistantController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CouponController;
 use App\Http\Controllers\Shop\HomeController;
@@ -26,6 +27,7 @@ Route::patch('/cart/{cartItem}', [CartController::class, 'update'])->name('cart.
 Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
 Route::post('/coupon/validate', [CouponController::class, 'validate'])->name('coupon.validate');
+Route::post('/ai-assistant/chat', [AiAssistantController::class, 'chat'])->name('ai-assistant.chat');
 
 Route::middleware('auth')->group(function () {
     Route::get('/checkout', [OrderController::class, 'create'])->name('orders.create');

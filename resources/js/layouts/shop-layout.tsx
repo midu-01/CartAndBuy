@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import AiAssistant from '@/components/shop/ai-assistant/AiAssistant';
 import Footer from '@/components/shop/footer';
 import Navbar from '@/components/shop/navbar';
 import type { SharedData } from '@/types';
@@ -23,6 +24,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+            <AiAssistant />
         </div>
     );
 }
