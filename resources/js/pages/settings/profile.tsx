@@ -1,5 +1,7 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, router, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Download } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -7,13 +9,29 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
 
+interface NotificationPrefs {
+    order_updates: boolean;
+    promotions: boolean;
+    ticket_replies: boolean;
+    newsletter: boolean;
+}
+
 type PageProps = {
-    auth: Auth;
+    auth: Auth & { user: { notification_preferences?: NotificationPrefs } };
 };
+
+const NOTIF_ITEMS: { key: keyof NotificationPrefs; label: string; desc: string }[] = [
+    { key: 'order_updates', label: 'Order Updates', desc: 'Shipping, delivery, and status changes' },
+    { key: 'promotions', label: 'Promotions', desc: 'Sales, coupons, and limited-time offers' },
+    { key: 'ticket_replies', label: 'Ticket Replies', desc: 'When our team replies to your support tickets' },
+    { key: 'newsletter', label: 'Newsletter', desc: 'Product news and store updates' },
+];
 
 export default function Profile({
     mustVerifyEmail,
@@ -23,6 +41,29 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<PageProps>().props;
+
+    const defaultPrefs: NotificationPrefs = {
+        order_updates: true,
+        promotions: true,
+        ticket_replies: true,
+        newsletter: false,
+        ...((auth.user.notification_preferences ?? {}) as Partial<NotificationPrefs>),
+    };
+
+    const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
+    const [savingPrefs, setSavingPrefs] = useState(false);
+
+    function togglePref(key: keyof NotificationPrefs) {
+        setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    }
+
+    function savePrefs() {
+        setSavingPrefs(true);
+        router.patch('/account/notifications', prefs, {
+            preserveScroll: true,
+            onFinish: () => setSavingPrefs(false),
+        });
+    }
 
     return (
         <>
@@ -122,6 +163,62 @@ export default function Profile({
                     )}
                 </Form>
             </div>
+
+            <Separator />
+
+            {/* Notification Preferences */}
+            <div className="space-y-4">
+                <Heading
+                    variant="small"
+                    title="Notification Preferences"
+                    description="Choose which emails you'd like to receive"
+                />
+                <div className="space-y-3">
+                    {NOTIF_ITEMS.map(({ key, label, desc }) => (
+                        <div key={key} className="flex items-center justify-between rounded-lg border p-3">
+                            <div>
+                                <p className="text-sm font-medium">{label}</p>
+                                <p className="text-xs text-muted-foreground">{desc}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => togglePref(key)}
+                                className={cn(
+                                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
+                                    prefs[key] ? 'bg-primary' : 'bg-muted',
+                                )}
+                            >
+                                <span className={cn(
+                                    'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200',
+                                    prefs[key] ? 'translate-x-4' : 'translate-x-0',
+                                )} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <Button onClick={savePrefs} disabled={savingPrefs} variant="outline">
+                    {savingPrefs ? 'Saving…' : 'Save Preferences'}
+                </Button>
+            </div>
+
+            <Separator />
+
+            {/* Download Personal Data */}
+            <div className="space-y-4">
+                <Heading
+                    variant="small"
+                    title="Your Data"
+                    description="Download a copy of all your account data"
+                />
+                <a href="/account/data/download">
+                    <Button variant="outline" className="gap-2">
+                        <Download className="size-4" />
+                        Download My Data
+                    </Button>
+                </a>
+            </div>
+
+            <Separator />
 
             <DeleteUser />
         </>

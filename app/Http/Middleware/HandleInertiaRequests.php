@@ -64,6 +64,8 @@ class HandleInertiaRequests extends Middleware
             'wishlistProductIds' => fn () => $user
                 ? Wishlist::where('user_id', $user->id)->pluck('product_id')
                 : [],
+            'avatarUrl' => fn () => $user?->avatar_url,
+            'initials' => fn () => $user?->initials,
         ];
     }
 }

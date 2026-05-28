@@ -1,8 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
-import { DollarSign, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DollarSign, Smartphone, MapPin, Gift, StickyNote, Clock, Wallet, Star } from 'lucide-react';
 import ShopLayout from '@/layouts/shop-layout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const BD_DIVISIONS: Record<string, string[]> = {
@@ -680,8 +681,26 @@ interface CartItem {
 interface Cart {
     items: CartItem[];
 }
+interface SavedAddress {
+    id: number;
+    type: string;
+    first_name: string;
+    last_name: string | null;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    upazilla: string | null;
+    village: string | null;
+    zip: string | null;
+    country: string;
+    is_default: boolean;
+}
 interface Props {
     cart: Cart;
+    addresses: SavedAddress[];
+    walletBalance: number;
+    pointsBalance: number;
 }
 
 type FormData = {
@@ -699,6 +718,13 @@ type FormData = {
     payment_method: string;
     coupon_code: string;
     transaction_id: string;
+    notes: string;
+    is_gift: boolean;
+    gift_message: string;
+    requested_delivery_date: string;
+    requested_delivery_time: string;
+    use_wallet: boolean;
+    redeem_points: number;
 };
 
 function Field({
@@ -749,29 +775,56 @@ function Field({
     );
 }
 
-export default function CheckoutPage({ cart }: Props) {
+export default function CheckoutPage({ cart, addresses, walletBalance, pointsBalance }: Props) {
     const items = cart.items;
     const subtotal = items.reduce(
         (sum, i) => sum + Number(i.price) * i.quantity,
         0,
     );
 
+    const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0] ?? null;
+    const [selectedAddressId, setSelectedAddressId] = useState<number | null>(defaultAddress?.id ?? null);
+
     const { data, setData, post, processing, errors } = useForm<FormData>({
-        first_name: '',
-        last_name: '',
+        first_name: defaultAddress?.first_name ?? '',
+        last_name: defaultAddress?.last_name ?? '',
         email: '',
-        phone: '',
-        address: '',
-        state: '',
-        city: '',
-        upazilla: '',
-        village: '',
-        zip: '',
+        phone: defaultAddress?.phone ?? '',
+        address: defaultAddress?.address ?? '',
+        state: defaultAddress?.state ?? '',
+        city: defaultAddress?.city ?? '',
+        upazilla: defaultAddress?.upazilla ?? '',
+        village: defaultAddress?.village ?? '',
+        zip: defaultAddress?.zip ?? '',
         country: 'Bangladesh',
         payment_method: 'cod',
         coupon_code: '',
         transaction_id: '',
+        notes: '',
+        is_gift: false,
+        gift_message: '',
+        requested_delivery_date: '',
+        requested_delivery_time: '',
+        use_wallet: false,
+        redeem_points: 0,
     });
+
+    function fillFromSavedAddress(addr: SavedAddress) {
+        setSelectedAddressId(addr.id);
+        setData({
+            ...data,
+            first_name: addr.first_name,
+            last_name: addr.last_name ?? '',
+            phone: addr.phone,
+            address: addr.address,
+            state: addr.state,
+            city: addr.city,
+            upazilla: addr.upazilla ?? '',
+            village: addr.village ?? '',
+            zip: addr.zip ?? '',
+            country: addr.country || 'Bangladesh',
+        });
+    }
 
     function handleStateChange(state: string) {
         setData('state', state);
@@ -815,6 +868,12 @@ export default function CheckoutPage({ cart }: Props) {
 
     const shipping = subtotal >= 2000 ? 0 : data.city === 'Dhaka' ? 80 : 130;
 
+    const beforeDiscounts = subtotal + shipping;
+    const walletDeduction = data.use_wallet ? Math.min(walletBalance, beforeDiscounts) : 0;
+    const redeemableValue = data.redeem_points > 0 ? Math.min(data.redeem_points, pointsBalance) / 100 : 0;
+    const pointsDeduction = Math.min(redeemableValue, Math.max(0, beforeDiscounts - walletDeduction));
+    const grandTotal = Math.max(0, beforeDiscounts - walletDeduction - pointsDeduction);
+
     return (
         <ShopLayout>
             <Head title="Checkout — CartAndBuy" />
@@ -826,6 +885,45 @@ export default function CheckoutPage({ cart }: Props) {
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         {/* Left — form */}
                         <div className="space-y-6 lg:col-span-2">
+                            {addresses.length > 0 && (
+                                <div className="rounded-xl border border-gray-100 bg-white p-6">
+                                    <h2 className="mb-4 font-semibold text-gray-900">Saved Addresses</h2>
+                                    <div className="space-y-2">
+                                        {addresses.map((addr) => (
+                                            <button
+                                                key={addr.id}
+                                                type="button"
+                                                onClick={() => fillFromSavedAddress(addr)}
+                                                className={cn(
+                                                    'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                                                    selectedAddressId === addr.id
+                                                        ? 'border-[#e94560] bg-[#e94560]/5'
+                                                        : 'border-gray-200 hover:border-gray-300',
+                                                )}
+                                            >
+                                                <MapPin className={cn('mt-0.5 size-4 shrink-0', selectedAddressId === addr.id ? 'text-[#e94560]' : 'text-gray-400')} />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium text-gray-900">
+                                                            {addr.first_name} {addr.last_name}
+                                                        </span>
+                                                        <Badge className={cn('border-0 text-xs capitalize', addr.type === 'shipping' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700')}>
+                                                            {addr.type}
+                                                        </Badge>
+                                                        {addr.is_default && (
+                                                            <Badge className="border-0 bg-[#e94560]/10 text-[#e94560] text-xs">Default</Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-0.5 truncate text-xs text-gray-500">
+                                                        {[addr.address, addr.city, addr.state].filter(Boolean).join(', ')}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="rounded-xl border border-gray-100 bg-white p-6">
                                 <h2 className="mb-4 font-semibold text-gray-900">
                                     Shipping Address
@@ -1048,6 +1146,167 @@ export default function CheckoutPage({ cart }: Props) {
                                 </div>
                             </div>
 
+                            {/* Additional Information */}
+                            <div className="rounded-xl border border-gray-100 bg-white p-6">
+                                <h2 className="mb-4 font-semibold text-gray-900">Additional Information</h2>
+                                <div className="space-y-4">
+                                    {/* Delivery Date & Time */}
+                                    <div>
+                                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                                            <Clock className="size-4 text-gray-400" />
+                                            Preferred Delivery
+                                            <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <input
+                                                    type="date"
+                                                    value={data.requested_delivery_date}
+                                                    onChange={(e) => setData('requested_delivery_date', e.target.value)}
+                                                    min={new Date().toISOString().split('T')[0]}
+                                                    className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <select
+                                                    value={data.requested_delivery_time}
+                                                    onChange={(e) => setData('requested_delivery_time', e.target.value)}
+                                                    className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none"
+                                                >
+                                                    <option value="">Any time</option>
+                                                    <option value="Morning (9am–12pm)">Morning (9am–12pm)</option>
+                                                    <option value="Afternoon (12pm–5pm)">Afternoon (12pm–5pm)</option>
+                                                    <option value="Evening (5pm–9pm)">Evening (5pm–9pm)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Order Notes */}
+                                    <div>
+                                        <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
+                                            <StickyNote className="size-4 text-gray-400" />
+                                            Order Notes
+                                            <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                                        </label>
+                                        <textarea
+                                            value={data.notes}
+                                            onChange={(e) => setData('notes', e.target.value)}
+                                            rows={2}
+                                            placeholder="Any special instructions for your order…"
+                                            className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Gift Option */}
+                                    <div>
+                                        <label className="flex cursor-pointer items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.is_gift}
+                                                onChange={(e) => setData('is_gift', e.target.checked)}
+                                                className="rounded border-gray-300 text-[#e94560] focus:ring-[#e94560]"
+                                            />
+                                            <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                                <Gift className="size-4 text-gray-400" />
+                                                This is a gift
+                                            </span>
+                                        </label>
+                                        {data.is_gift && (
+                                            <div className="mt-3">
+                                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                                    Gift Message
+                                                    <span className="ml-1 text-xs font-normal text-gray-400">(Optional)</span>
+                                                </label>
+                                                <textarea
+                                                    value={data.gift_message}
+                                                    onChange={(e) => setData('gift_message', e.target.value)}
+                                                    rows={3}
+                                                    placeholder="Write a heartfelt message for the recipient…"
+                                                    className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none resize-none"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Wallet & Points Redemption */}
+                            {(walletBalance > 0 || pointsBalance > 0) && (
+                                <div className="rounded-xl border border-gray-100 bg-white p-6 space-y-4">
+                                    <h2 className="font-semibold text-gray-900">Rewards & Wallet</h2>
+
+                                    {walletBalance > 0 && (
+                                        <label className="flex cursor-pointer items-center justify-between rounded-lg border border-gray-100 p-3 hover:bg-gray-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
+                                                    <Wallet className="size-4 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">Use Wallet Balance</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        ৳{walletBalance.toFixed(2)} available
+                                                        {data.use_wallet && walletDeduction > 0 && (
+                                                            <span className="ml-1 font-semibold text-green-600">— saves ৳{walletDeduction.toFixed(2)}</span>
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div
+                                                onClick={() => setData('use_wallet', !data.use_wallet)}
+                                                className={cn(
+                                                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
+                                                    data.use_wallet ? 'bg-[#e94560]' : 'bg-gray-200',
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200',
+                                                    data.use_wallet ? 'translate-x-4' : 'translate-x-0',
+                                                )} />
+                                            </div>
+                                        </label>
+                                    )}
+
+                                    {pointsBalance > 0 && (
+                                        <div className="rounded-lg border border-gray-100 p-3">
+                                            <div className="mb-2 flex items-center gap-3">
+                                                <div className="flex size-8 items-center justify-center rounded-full bg-amber-100">
+                                                    <Star className="size-4 text-amber-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">Redeem Loyalty Points</p>
+                                                    <p className="text-xs text-gray-500">{pointsBalance.toLocaleString()} pts available · 100 pts = ৳1</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={pointsBalance}
+                                                    step={100}
+                                                    value={data.redeem_points || ''}
+                                                    onChange={(e) => setData('redeem_points', Math.min(Number(e.target.value), pointsBalance))}
+                                                    placeholder="Enter points to redeem…"
+                                                    className="flex-1 rounded-lg border px-3 py-1.5 text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setData('redeem_points', pointsBalance)}
+                                                    className="shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                                                >
+                                                    Use All
+                                                </button>
+                                            </div>
+                                            {data.redeem_points > 0 && (
+                                                <p className="mt-1.5 text-xs text-amber-600 font-medium">
+                                                    Saving ৳{pointsDeduction.toFixed(2)} with {Math.min(data.redeem_points, pointsBalance)} pts
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="rounded-xl border border-gray-100 bg-white p-6">
                                 <h2 className="mb-4 font-semibold text-gray-900">
                                     Payment Method
@@ -1168,7 +1427,7 @@ export default function CheckoutPage({ cart }: Props) {
                                     >
                                         Send{' '}
                                         <span className="font-semibold">
-                                            ৳{subtotal + shipping}
+                                            ৳{grandTotal.toFixed(2)}
                                         </span>{' '}
                                         to{' '}
                                         <span className="font-semibold">
@@ -1282,19 +1541,27 @@ export default function CheckoutPage({ cart }: Props) {
                                         <span>Shipping</span>
                                         <span>
                                             {shipping === 0 ? (
-                                                <span className="text-green-600">
-                                                    Free
-                                                </span>
+                                                <span className="text-green-600">Free</span>
                                             ) : (
                                                 `৳${shipping}`
                                             )}
                                         </span>
                                     </div>
+                                    {walletDeduction > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span>Wallet</span>
+                                            <span>−৳{walletDeduction.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {pointsDeduction > 0 && (
+                                        <div className="flex justify-between text-amber-600">
+                                            <span>Points ({Math.min(data.redeem_points, pointsBalance)} pts)</span>
+                                            <span>−৳{pointsDeduction.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between border-t pt-2 font-bold text-gray-900">
                                         <span>Total</span>
-                                        <span>
-                                            ৳{(subtotal + shipping).toFixed(2)}
-                                        </span>
+                                        <span>৳{grandTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 

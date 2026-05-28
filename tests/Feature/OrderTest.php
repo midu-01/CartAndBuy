@@ -50,11 +50,12 @@ class OrderTest extends TestCase
 
     // --- Checkout page ---
 
-    public function test_checkout_page_requires_authentication(): void
+    public function test_guest_checkout_redirects_to_cart_when_empty(): void
     {
+        // Guests can access checkout; empty cart redirects to cart page
         $response = $this->get(route('orders.create'));
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('cart.show'));
     }
 
     public function test_checkout_page_redirects_to_cart_when_empty(): void
@@ -79,11 +80,12 @@ class OrderTest extends TestCase
 
     // --- Place order ---
 
-    public function test_guest_cannot_place_order(): void
+    public function test_guest_without_cart_cannot_place_order(): void
     {
+        // Guests without a cart get 422 (cart is empty), not a login redirect
         $response = $this->post(route('orders.store'), $this->shippingPayload());
 
-        $response->assertRedirect(route('login'));
+        $response->assertStatus(422);
     }
 
     public function test_authenticated_user_can_place_order(): void
@@ -124,13 +126,14 @@ class OrderTest extends TestCase
     public function test_order_with_subtotal_under_free_shipping_threshold_has_shipping_cost(): void
     {
         $user = User::factory()->create();
-        $this->cartWithItem($user, ['price' => 30]); // 2 * 30 = 60, under $100
+        $this->cartWithItem($user, ['price' => 30]); // 2 * 30 = 60, under 2000
 
         $this->actingAs($user)->post(route('orders.store'), $this->shippingPayload());
 
+        // Default fallback shipping cost when no ShippingRule matches
         $this->assertDatabaseHas('orders', [
             'user_id' => $user->id,
-            'shipping_cost' => 80,
+            'shipping_cost' => 130,
         ]);
     }
 
@@ -187,7 +190,7 @@ class OrderTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('orders.store'), []);
 
-        $response->assertSessionHasErrors(['first_name', 'phone', 'address', 'city', 'state', 'upazilla', 'village', 'country', 'payment_method']);
+        $response->assertSessionHasErrors(['first_name', 'phone', 'address', 'city', 'state', 'country', 'payment_method']);
     }
 
     // --- Order history ---
@@ -359,12 +362,13 @@ class OrderTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_guest_cannot_cancel_order(): void
+    public function test_guest_cannot_cancel_another_users_order(): void
     {
-        $order = Order::factory()->pending()->create();
+        // Cancel route is public; guests without the order token are forbidden
+        $order = Order::factory()->pending()->create(); // has a user_id
 
         $response = $this->patch(route('orders.cancel', $order));
 
-        $response->assertRedirect(route('login'));
+        $response->assertForbidden();
     }
 }

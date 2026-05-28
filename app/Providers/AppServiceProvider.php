@@ -2,19 +2,23 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityLog;
+use App\Models\Order;
+use App\Models\User;
+use App\Observers\OrderObserver;
 use App\Services\AiAssistant\AiProviderInterface;
 use App\Services\AiAssistant\OpenAiProvider;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         $this->app->singleton(AiProviderInterface::class, fn () => new OpenAiProvider(
@@ -23,17 +27,13 @@ class AppServiceProvider extends ServiceProvider
         ));
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->registerObservers();
+        $this->registerActivityListeners();
     }
 
-    /**
-     * Configure default behaviors for production-ready applications.
-     */
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
@@ -51,5 +51,39 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function registerObservers(): void
+    {
+        Order::observe(OrderObserver::class);
+    }
+
+    protected function registerActivityListeners(): void
+    {
+        Event::listen(Login::class, function (Login $event): void {
+            if (! $event->user instanceof User) {
+                return;
+            }
+
+            ActivityLog::create([
+                'user_id' => $event->user->id,
+                'action' => 'login',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        });
+
+        Event::listen(Logout::class, function (Logout $event): void {
+            if (! $event->user instanceof User) {
+                return;
+            }
+
+            ActivityLog::create([
+                'user_id' => $event->user->id,
+                'action' => 'logout',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        });
     }
 }
