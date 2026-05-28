@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     Bookmark,
+    CreditCard,
     FolderOpen,
     LayoutDashboard,
     LogOut,
@@ -22,6 +23,7 @@ const navItems = [
     { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { href: '/admin/brands', label: 'Brands', icon: Bookmark },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/admin/payments', label: 'Payments', icon: CreditCard },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/coupons', label: 'Coupons', icon: Tag },
     { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare },

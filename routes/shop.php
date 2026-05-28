@@ -15,6 +15,7 @@ use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\InvoiceController;
 use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\OrderRequestController;
+use App\Http\Controllers\Shop\PaymentController;
 use App\Http\Controllers\Shop\ProductCompareController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\ProductStockNotificationController;
@@ -52,6 +53,8 @@ Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name
 Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder'])->name('orders.reorder');
 Route::get('/orders/{order}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice');
 Route::post('/orders/{order}/requests', [OrderRequestController::class, 'store'])->name('orders.requests.store');
+Route::post('/orders/{order}/payment/receipt', [PaymentController::class, 'uploadReceipt'])->name('orders.payment.receipt');
+Route::post('/orders/{order}/payment/retry', [PaymentController::class, 'retry'])->name('orders.payment.retry');
 
 Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

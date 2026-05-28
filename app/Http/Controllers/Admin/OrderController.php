@@ -32,7 +32,7 @@ class OrderController extends Controller
 
     public function show(Order $order): Response
     {
-        $order->load(['user', 'items']);
+        $order->load(['user', 'items', 'paymentTransactions.verifiedBy', 'refunds.refundedBy']);
 
         return Inertia::render('admin/order-detail', [
             'order' => $order,

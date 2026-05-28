@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Middleware\EnsureTeamMembership;
 use Illuminate\Support\Facades\Route;
@@ -19,3 +20,6 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 
 require __DIR__.'/shop.php';
+
+// Payment gateway webhooks — excluded from CSRF via bootstrap/app.php
+Route::post('/webhooks/payment/{gateway}', PaymentWebhookController::class)->name('webhooks.payment');

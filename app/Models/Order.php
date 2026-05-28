@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'user_id', 'guest_email', 'guest_phone', 'status', 'subtotal', 'shipping_cost', 'total',
     'shipping_address', 'payment_method', 'payment_status', 'coupon_code', 'discount_amount',
     'points_redeemed', 'wallet_used',
-    'transaction_id', 'is_gift', 'gift_message', 'notes', 'requested_delivery_date',
+    'transaction_id', 'payment_receipt', 'payment_failure_reason', 'payment_verified_at', 'payment_verified_by',
+    'is_gift', 'gift_message', 'notes', 'requested_delivery_date',
     'requested_delivery_time', 'tracking_number', 'courier_name', 'tracking_url', 'order_token',
 ])]
 class Order extends Model
@@ -29,6 +30,7 @@ class Order extends Model
             'discount_amount' => 'decimal:2',
             'is_gift' => 'boolean',
             'requested_delivery_date' => 'date',
+            'payment_verified_at' => 'datetime',
         ];
     }
 
@@ -54,5 +56,17 @@ class Order extends Model
     public function requests(): HasMany
     {
         return $this->hasMany(OrderRequest::class);
+    }
+
+    /** @return HasMany<PaymentTransaction, $this> */
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    /** @return HasMany<Refund, $this> */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
     }
 }

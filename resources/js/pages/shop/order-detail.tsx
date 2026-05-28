@@ -3,7 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft, XCircle, RotateCcw, Download, Truck, CheckCircle2,
     Clock, Package, Ban, Gift, StickyNote, CalendarClock, ExternalLink,
-    ChevronDown, ChevronUp,
+    ChevronDown, ChevronUp, Upload, RefreshCw,
 } from 'lucide-react';
 import ShopLayout from '@/layouts/shop-layout';
 import { Badge } from '@/components/ui/badge';
@@ -48,15 +48,39 @@ interface OrderRequest {
     order_item_id: number | null;
     created_at: string;
 }
+interface PaymentTransaction {
+    id: number;
+    gateway: string;
+    type: string;
+    amount: string;
+    status: string;
+    gateway_transaction_id: string | null;
+    created_at: string;
+}
+
+interface Refund {
+    id: number;
+    amount: string;
+    type: string;
+    reason: string;
+    status: string;
+    refund_method: string;
+    processed_at: string | null;
+}
+
 interface Order {
     id: number;
     status: string;
     subtotal: string;
     shipping_cost: string;
     discount_amount: string;
+    wallet_used: string;
     total: string;
     payment_method: string;
     payment_status: string;
+    payment_receipt: string | null;
+    payment_failure_reason: string | null;
+    transaction_id: string | null;
     coupon_code: string | null;
     created_at: string;
     shipping_address: ShippingAddress;
@@ -73,6 +97,8 @@ interface Order {
     user_id: number | null;
     statusHistories: StatusHistory[];
     requests: OrderRequest[];
+    payment_transactions: PaymentTransaction[];
+    refunds: Refund[];
 }
 interface Props { order: Order }
 
@@ -105,6 +131,119 @@ const requestStatusColors: Record<string, string> = {
     rejected: 'bg-red-100 text-red-700',
     resolved: 'bg-gray-100 text-gray-600',
 };
+
+function ReceiptUploadModal({ order }: { order: Order }) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm<{ receipt: File | null }>({ receipt: null });
+    const tokenQuery = order.order_token ? `?token=${order.order_token}` : '';
+
+    function submit(e: React.FormEvent) {
+        e.preventDefault();
+        post(`/orders/${order.id}/payment/receipt${tokenQuery}`, {
+            forceFormData: true,
+            onSuccess: () => { reset(); setOpen(false); },
+        });
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                    <Upload className="size-4" />
+                    Upload Receipt
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Upload Payment Receipt</DialogTitle>
+                    <DialogDescription>
+                        Upload a screenshot or PDF of your bKash / Nagad transaction to help us verify faster.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Receipt File</label>
+                        <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,.pdf"
+                            onChange={(e) => setData('receipt', e.target.files?.[0] ?? null)}
+                            className={cn(
+                                'block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#e94560]/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#e94560] hover:file:bg-[#e94560]/20',
+                                errors.receipt && 'border border-red-400 rounded-lg p-1',
+                            )}
+                        />
+                        {errors.receipt && <p className="mt-1 text-xs text-red-500">{errors.receipt}</p>}
+                        <p className="mt-1 text-xs text-gray-400">Accepted: JPG, PNG, WebP, PDF — max 5 MB</p>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" disabled={processing}>Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing || !data.receipt} className="border-0 bg-[#e94560] text-white hover:bg-[#c73652]">
+                            {processing ? 'Uploading…' : 'Upload Receipt'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RetryPaymentModal({ order }: { order: Order }) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({ transaction_id: '' });
+    const tokenQuery = order.order_token ? `?token=${order.order_token}` : '';
+
+    function submit(e: React.FormEvent) {
+        e.preventDefault();
+        post(`/orders/${order.id}/payment/retry${tokenQuery}`, {
+            onSuccess: () => { reset(); setOpen(false); },
+        });
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50">
+                    <RefreshCw className="size-4" />
+                    Retry Payment
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Retry Payment</DialogTitle>
+                    <DialogDescription>
+                        Enter your new {order.payment_method === 'bkash' ? 'bKash' : 'Nagad'} transaction ID to re-submit for verification.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Transaction ID</label>
+                        <input
+                            type="text"
+                            value={data.transaction_id}
+                            onChange={(e) => setData('transaction_id', e.target.value)}
+                            placeholder="e.g. 8N5K3D2A1B"
+                            className={cn(
+                                'w-full rounded-lg border px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-[#e94560] focus:outline-none',
+                                errors.transaction_id && 'border-red-400',
+                            )}
+                        />
+                        {errors.transaction_id && <p className="mt-1 text-xs text-red-500">{errors.transaction_id}</p>}
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" disabled={processing}>Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing} className="border-0 bg-[#e94560] text-white hover:bg-[#c73652]">
+                            {processing ? 'Submitting…' : 'Submit'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function RequestModal({ order }: { order: Order }) {
     const [open, setOpen] = useState(false);
@@ -467,6 +606,34 @@ export default function OrderDetailPage({ order }: Props) {
                             </div>
                         )}
 
+                        {/* Refund History */}
+                        {order.refunds && order.refunds.length > 0 && (
+                            <div className="rounded-xl border border-gray-100 bg-white p-5">
+                                <h2 className="mb-4 font-semibold text-gray-900">Refunds</h2>
+                                <div className="space-y-3">
+                                    {order.refunds.map((refund) => (
+                                        <div key={refund.id} className="rounded-lg bg-gray-50 px-4 py-3">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <span className="font-bold text-orange-600">-৳{Number(refund.amount).toFixed(2)}</span>
+                                                <Badge className={cn('border-0 text-xs capitalize',
+                                                    refund.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                    refund.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                    'bg-amber-100 text-amber-700'
+                                                )}>
+                                                    {refund.status}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-sm text-gray-600">{refund.reason}</p>
+                                            <p className="mt-0.5 text-xs text-gray-400 capitalize">
+                                                {refund.type} refund via {refund.refund_method.replace('_', ' ')}
+                                                {refund.processed_at && ` · ${new Date(refund.processed_at).toLocaleDateString('en-GB')}`}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Shipping Address */}
                         <div className="rounded-xl border border-gray-100 bg-white p-5">
                             <h2 className="mb-3 font-semibold text-gray-900">Shipping Address</h2>
@@ -546,18 +713,56 @@ export default function OrderDetailPage({ order }: Props) {
                                 </div>
                             </div>
 
-                            <div className="mt-4 space-y-1.5 border-t pt-4 text-gray-500">
+                            {Number(order.wallet_used) > 0 && (
+                                <div className="flex justify-between text-blue-600">
+                                    <span>Wallet / Points</span>
+                                    <span>-৳{Number(order.wallet_used).toFixed(2)}</span>
+                                </div>
+                            )}
+
+                        <div className="mt-4 space-y-1.5 border-t pt-4 text-gray-500">
                                 <div className="flex justify-between">
                                     <span>Payment</span>
                                     <span className="uppercase">{order.payment_method}</span>
                                 </div>
+                                {order.transaction_id && (
+                                    <div className="flex justify-between">
+                                        <span>TxnID</span>
+                                        <span className="font-mono text-xs truncate max-w-28">{order.transaction_id}</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                     <span>Status</span>
-                                    <Badge className={cn('border-0 text-xs capitalize', order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                                        {order.payment_status}
+                                    <Badge className={cn('border-0 text-xs', {
+                                        'bg-green-100 text-green-700': order.payment_status === 'paid',
+                                        'bg-amber-100 text-amber-700': order.payment_status === 'pending_verification',
+                                        'bg-red-100 text-red-700': order.payment_status === 'failed',
+                                        'bg-gray-100 text-gray-600': order.payment_status === 'unpaid',
+                                    })}>
+                                        {order.payment_status.replace('_', ' ')}
                                     </Badge>
                                 </div>
+                                {order.payment_failure_reason && (
+                                    <p className="text-xs text-red-500">{order.payment_failure_reason}</p>
+                                )}
                             </div>
+
+                            {/* Receipt upload / retry actions */}
+                            {order.payment_method !== 'cod' && ['pending_verification', 'unpaid'].includes(order.payment_status) && (
+                                <div className="mt-4 border-t pt-4">
+                                    <p className="mb-2 text-xs text-gray-500">Speed up verification by uploading your receipt.</p>
+                                    <ReceiptUploadModal order={order} />
+                                    {order.payment_receipt && (
+                                        <p className="mt-2 text-xs text-green-600">✓ Receipt uploaded</p>
+                                    )}
+                                </div>
+                            )}
+                            {order.payment_status === 'failed' && order.payment_method !== 'cod' && (
+                                <div className="mt-4 border-t pt-4">
+                                    <p className="mb-2 text-xs text-red-500">Payment failed. Please retry with a new transaction.</p>
+                                    <RetryPaymentModal order={order} />
+                                </div>
+                            )}
 
                             <div className="mt-4 space-y-2 border-t pt-4">
                                 <a href={invoiceUrl} target="_blank" rel="noreferrer" className="block">

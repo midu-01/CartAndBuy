@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SupportTicketController;
@@ -45,4 +46,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', EnsureUserIsAdmin::c
     Route::get('/tickets/{ticket}', [SupportTicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('tickets.reply');
     Route::patch('/tickets/{ticket}/status', [SupportTicketController::class, 'updateStatus'])->name('tickets.status');
+
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::patch('/payments/{order}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
+    Route::patch('/payments/{order}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+    Route::post('/orders/{order}/refund', [PaymentController::class, 'refund'])->name('orders.refund');
 });

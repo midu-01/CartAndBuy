@@ -150,7 +150,9 @@ class OrderController extends Controller
                 'coupon_code' => $couponCode,
                 'shipping_address' => $request->only(['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'upazilla', 'village', 'zip', 'country']),
                 'payment_method' => $request->payment_method,
-                'payment_status' => 'unpaid',
+                'payment_status' => $request->payment_method === 'cod'
+                    ? 'unpaid'
+                    : ($request->filled('transaction_id') ? 'pending_verification' : 'unpaid'),
                 'transaction_id' => $request->transaction_id,
                 'is_gift' => $request->boolean('is_gift'),
                 'gift_message' => $request->gift_message,
@@ -163,6 +165,18 @@ class OrderController extends Controller
                 'status' => 'pending',
                 'notes' => 'Order placed successfully.',
             ]);
+
+            if ($request->payment_method !== 'cod' && $request->filled('transaction_id')) {
+                $order->paymentTransactions()->create([
+                    'user_id' => $request->user()?->id,
+                    'gateway' => $request->payment_method,
+                    'type' => 'payment',
+                    'amount' => $total,
+                    'status' => 'pending',
+                    'gateway_transaction_id' => $request->transaction_id,
+                    'notes' => 'Submitted at checkout.',
+                ]);
+            }
 
             foreach ($cart->items as $item) {
                 $order->items()->create([
@@ -239,7 +253,7 @@ class OrderController extends Controller
             abort_if($request->query('token') !== $order->order_token, 403);
         }
 
-        $order->load(['items.product', 'items.variant', 'statusHistories', 'requests']);
+        $order->load(['items.product', 'items.variant', 'statusHistories', 'requests', 'paymentTransactions', 'refunds']);
 
         return Inertia::render('shop/order-detail', [
             'order' => $order,
