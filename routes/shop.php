@@ -5,7 +5,9 @@ use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CouponController;
 use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\OrderController;
+use App\Http\Controllers\Shop\ProductCompareController;
 use App\Http\Controllers\Shop\ProductController;
+use App\Http\Controllers\Shop\ProductStockNotificationController;
 use App\Http\Controllers\Shop\ReviewController;
 use App\Http\Controllers\Shop\SupportController;
 use App\Http\Controllers\Shop\WishlistController;
@@ -18,7 +20,9 @@ Route::get('/help-center', [SupportController::class, 'helpCenter'])->name('help
 Route::get('/contact', [SupportController::class, 'contact'])->name('contact');
 Route::get('/returns', [SupportController::class, 'returns'])->name('returns');
 Route::get('/shop', [ProductController::class, 'index'])->name('shop.index');
+Route::get('/compare', [ProductCompareController::class, 'index'])->name('products.compare');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::post('/products/{product}/stock-notifications', [ProductStockNotificationController::class, 'store'])->name('products.stock-notifications.store');
 
 // Cart (public — guests use session)
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');

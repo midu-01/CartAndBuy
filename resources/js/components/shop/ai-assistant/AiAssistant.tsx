@@ -49,7 +49,7 @@ export default function AiAssistant() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
             {/* Chat window */}
             <div
                 aria-hidden={!isOpen}
@@ -68,7 +68,7 @@ export default function AiAssistant() {
 
             {/* Proactive tooltip */}
             {proactiveTip && !isOpen && (
-                <div className="relative animate-in slide-in-from-bottom-3 fade-in duration-400">
+                <div className="relative animate-in slide-in-from-bottom-3 fade-in duration-400 pointer-events-auto">
                     {/* Accent bar */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-[#e94560] to-[#0f3460]" />
 
@@ -104,7 +104,9 @@ export default function AiAssistant() {
             )}
 
             {/* Floating button */}
-            <AiChatButton isOpen={isOpen} hasUnread={hasUnread} onToggle={handleToggle} />
+            <div className="pointer-events-auto">
+                <AiChatButton isOpen={isOpen} hasUnread={hasUnread} onToggle={handleToggle} />
+            </div>
         </div>
     );
 }

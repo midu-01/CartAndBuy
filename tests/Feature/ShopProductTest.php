@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductStockNotification;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -171,6 +172,66 @@ class ShopProductTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->where('userReviewed', true)
         );
+    }
+
+    public function test_product_detail_tracks_recently_viewed_products(): void
+    {
+        $first = Product::factory()->create();
+        $second = Product::factory()->create();
+
+        $this->get(route('products.show', $first));
+        $response = $this->get(route('products.show', $second));
+
+        $response->assertInertia(fn ($page) => $page
+            ->has('recentlyViewed', 1)
+            ->where('recentlyViewed.0.id', $first->id)
+        );
+    }
+
+    public function test_compare_page_shows_selected_products(): void
+    {
+        $products = Product::factory()->count(2)->create();
+
+        $response = $this->get(route('products.compare', [
+            'products' => $products->pluck('id')->implode(','),
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('shop/compare')
+            ->has('products', 2)
+        );
+    }
+
+    public function test_customer_can_request_out_of_stock_notification(): void
+    {
+        $product = Product::factory()->outOfStock()->create();
+
+        $response = $this->post(route('products.stock-notifications.store', $product), [
+            'email' => 'buyer@example.com',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('product_stock_notifications', [
+            'product_id' => $product->id,
+            'email' => 'buyer@example.com',
+            'notified_at' => null,
+        ]);
+    }
+
+    public function test_duplicate_stock_notification_request_is_reused(): void
+    {
+        $product = Product::factory()->outOfStock()->create();
+        ProductStockNotification::create([
+            'product_id' => $product->id,
+            'email' => 'buyer@example.com',
+        ]);
+
+        $this->post(route('products.stock-notifications.store', $product), [
+            'email' => 'buyer@example.com',
+        ]);
+
+        $this->assertDatabaseCount('product_stock_notifications', 1);
     }
 
     // --- Reviews ---

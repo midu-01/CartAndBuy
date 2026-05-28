@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,7 +18,7 @@ class OrderController extends Controller
 {
     public function create(Request $request): Response|RedirectResponse
     {
-        $cart = Cart::where('user_id', $request->user()->id)->with('items.product')->first();
+        $cart = Cart::where('user_id', $request->user()->id)->with(['items.product', 'items.variant'])->first();
 
         if (! $cart || $cart->items->isEmpty()) {
             return to_route('cart.show');
@@ -46,7 +47,7 @@ class OrderController extends Controller
             'transaction_id' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $cart = Cart::where('user_id', $request->user()->id)->with('items.product')->firstOrFail();
+        $cart = Cart::where('user_id', $request->user()->id)->with(['items.product', 'items.variant'])->firstOrFail();
         abort_if($cart->items->isEmpty(), 422, 'Cart is empty.');
 
         $subtotal = $cart->items->sum(fn ($item) => $item->price * $item->quantity);
@@ -69,32 +70,48 @@ class OrderController extends Controller
 
         $total = max(0, $subtotal + $shippingCost - $discountAmount);
 
-        $order = Order::create([
-            'user_id' => $request->user()->id,
-            'status' => 'pending',
-            'subtotal' => $subtotal,
-            'shipping_cost' => $shippingCost,
-            'discount_amount' => $discountAmount,
-            'total' => $total,
-            'coupon_code' => $couponCode,
-            'shipping_address' => $request->only(['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'upazilla', 'village', 'zip', 'country']),
-            'payment_method' => $request->payment_method,
-            'payment_status' => 'unpaid',
-            'transaction_id' => $request->transaction_id,
-        ]);
+        $order = DB::transaction(function () use ($request, $cart, $subtotal, $shippingCost, $discountAmount, $total, $couponCode): Order {
+            foreach ($cart->items as $item) {
+                $stockAvailable = $item->variant?->stock_qty ?? $item->product->stock_qty;
+                abort_if($stockAvailable < $item->quantity, 422, "{$item->product->name} does not have enough stock.");
+            }
 
-        foreach ($cart->items as $item) {
-            $order->items()->create([
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->name,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->price,
-                'total_price' => $item->price * $item->quantity,
+            $order = Order::create([
+                'user_id' => $request->user()->id,
+                'status' => 'pending',
+                'subtotal' => $subtotal,
+                'shipping_cost' => $shippingCost,
+                'discount_amount' => $discountAmount,
+                'total' => $total,
+                'coupon_code' => $couponCode,
+                'shipping_address' => $request->only(['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'upazilla', 'village', 'zip', 'country']),
+                'payment_method' => $request->payment_method,
+                'payment_status' => 'unpaid',
+                'transaction_id' => $request->transaction_id,
             ]);
-            $item->product->decrement('stock_qty', $item->quantity);
-        }
 
-        $cart->items()->delete();
+            foreach ($cart->items as $item) {
+                $order->items()->create([
+                    'product_id' => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'product_name' => $item->product->name,
+                    'variant_attributes' => $item->variant?->attributes,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->price,
+                    'total_price' => $item->price * $item->quantity,
+                ]);
+
+                if ($item->variant) {
+                    $item->variant->decrement('stock_qty', $item->quantity);
+                } else {
+                    $item->product->decrement('stock_qty', $item->quantity);
+                }
+            }
+
+            $cart->items()->delete();
+
+            return $order;
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Order placed successfully!']);
 
@@ -117,7 +134,7 @@ class OrderController extends Controller
         $user = Auth::user();
         abort_if($order->user_id !== $user->id, 403);
 
-        $order->load('items.product');
+        $order->load(['items.product', 'items.variant']);
 
         return Inertia::render('shop/order-detail', [
             'order' => $order,
@@ -131,10 +148,12 @@ class OrderController extends Controller
         abort_if($order->user_id !== $user->id, 403);
         abort_if($order->status !== 'pending', 422, 'Only pending orders can be cancelled.');
 
-        $order->load('items');
+        $order->load(['items.product', 'items.variant']);
 
         foreach ($order->items as $item) {
-            if ($item->product_id) {
+            if ($item->variant) {
+                $item->variant()->increment('stock_qty', $item->quantity);
+            } elseif ($item->product_id) {
                 $item->product()->increment('stock_qty', $item->quantity);
             }
         }

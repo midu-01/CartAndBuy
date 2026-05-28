@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['cart_id', 'product_id', 'quantity', 'price'])]
+#[Fillable(['cart_id', 'product_id', 'product_variant_id', 'quantity', 'price'])]
 class CartItem extends Model
 {
     use HasFactory;
@@ -29,6 +29,17 @@ class CartItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /** @return BelongsTo<ProductVariant, $this> */
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function stockAvailable(): int
+    {
+        return $this->variant?->stock_qty ?? $this->product->stock_qty;
     }
 
     public function getSubtotalAttribute(): string

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -169,5 +170,42 @@ class CartTest extends TestCase
             'product_id' => $product->id,
             'price' => $product->sale_price,
         ]);
+    }
+
+    public function test_variant_cart_item_uses_variant_stock_and_price(): void
+    {
+        $product = Product::factory()->create(['price' => 100, 'sale_price' => null, 'stock_qty' => 50]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'price_modifier' => 25,
+            'stock_qty' => 3,
+        ]);
+
+        $this->post(route('cart.add'), [
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 10,
+        ]);
+
+        $this->assertDatabaseHas('cart_items', [
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 3,
+            'price' => 125,
+        ]);
+    }
+
+    public function test_same_product_with_different_variants_creates_separate_cart_items(): void
+    {
+        $product = Product::factory()->create(['stock_qty' => 50]);
+        $small = ProductVariant::factory()->create(['product_id' => $product->id, 'attributes' => ['size' => 'S'], 'stock_qty' => 5]);
+        $large = ProductVariant::factory()->create(['product_id' => $product->id, 'attributes' => ['size' => 'L'], 'stock_qty' => 5]);
+
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'product_variant_id' => $small->id, 'quantity' => 1]);
+        $this->post(route('cart.add'), ['product_id' => $product->id, 'product_variant_id' => $large->id, 'quantity' => 1]);
+
+        $this->assertDatabaseCount('cart_items', 2);
+        $this->assertDatabaseHas('cart_items', ['product_variant_id' => $small->id, 'quantity' => 1]);
+        $this->assertDatabaseHas('cart_items', ['product_variant_id' => $large->id, 'quantity' => 1]);
     }
 }

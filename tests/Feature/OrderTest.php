@@ -7,6 +7,7 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,11 +24,14 @@ class OrderTest extends TestCase
             'email' => 'john@example.com',
             'phone' => '555-1234',
             'address' => '123 Main St',
-            'city' => 'Springfield',
-            'state' => 'IL',
+            'city' => 'Dhaka',
+            'state' => 'Dhaka',
+            'upazilla' => 'Dhaka Sadar',
+            'village' => 'Dhanmondi',
             'zip' => '62701',
-            'country' => 'US',
+            'country' => 'Bangladesh',
             'payment_method' => 'cod',
+            'transaction_id' => 'TX12345',
         ], $override);
     }
 
@@ -117,7 +121,7 @@ class OrderTest extends TestCase
         ]);
     }
 
-    public function test_order_with_subtotal_under_100_has_shipping_cost(): void
+    public function test_order_with_subtotal_under_free_shipping_threshold_has_shipping_cost(): void
     {
         $user = User::factory()->create();
         $this->cartWithItem($user, ['price' => 30]); // 2 * 30 = 60, under $100
@@ -126,14 +130,14 @@ class OrderTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'user_id' => $user->id,
-            'shipping_cost' => 9.99,
+            'shipping_cost' => 80,
         ]);
     }
 
-    public function test_order_with_subtotal_over_100_has_free_shipping(): void
+    public function test_order_with_subtotal_over_free_shipping_threshold_has_free_shipping(): void
     {
         $user = User::factory()->create();
-        $this->cartWithItem($user, ['price' => 60]); // 2 * 60 = 120, over $100
+        $this->cartWithItem($user, ['price' => 1200]); // 2 * 1200 = 2400
 
         $this->actingAs($user)->post(route('orders.store'), $this->shippingPayload());
 
@@ -183,7 +187,7 @@ class OrderTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('orders.store'), []);
 
-        $response->assertSessionHasErrors(['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zip', 'country', 'payment_method']);
+        $response->assertSessionHasErrors(['first_name', 'phone', 'address', 'city', 'state', 'upazilla', 'village', 'country', 'payment_method']);
     }
 
     // --- Order history ---
@@ -270,6 +274,64 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('products', [
             'id' => $product->id,
             'stock_qty' => 10, // 8 + 2 restored
+        ]);
+    }
+
+    public function test_placing_order_decrements_variant_stock_when_cart_item_has_variant(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['stock_qty' => 20, 'price' => 100]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'price_modifier' => 10,
+            'stock_qty' => 4,
+        ]);
+        $cart = Cart::factory()->create(['user_id' => $user->id]);
+        CartItem::factory()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+            'price' => 110,
+        ]);
+
+        $this->actingAs($user)->post(route('orders.store'), $this->shippingPayload());
+
+        $this->assertDatabaseHas('product_variants', [
+            'id' => $variant->id,
+            'stock_qty' => 2,
+        ]);
+        $this->assertDatabaseHas('order_items', [
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'unit_price' => 110,
+        ]);
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'stock_qty' => 20,
+        ]);
+    }
+
+    public function test_cancelling_order_restores_variant_stock(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['stock_qty' => 20, 'price' => 100]);
+        $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'stock_qty' => 1]);
+        $order = Order::factory()->pending()->create(['user_id' => $user->id]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'product_name' => $product->name,
+            'quantity' => 2,
+            'unit_price' => 100,
+            'total_price' => 200,
+        ]);
+
+        $this->actingAs($user)->patch(route('orders.cancel', $order));
+
+        $this->assertDatabaseHas('product_variants', [
+            'id' => $variant->id,
+            'stock_qty' => 3,
         ]);
     }
 

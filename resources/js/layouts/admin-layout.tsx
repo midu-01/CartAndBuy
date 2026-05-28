@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
+    Bookmark,
     FolderOpen,
     LayoutDashboard,
     LogOut,
@@ -19,6 +20,7 @@ const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
+    { href: '/admin/brands', label: 'Brands', icon: Bookmark },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/coupons', label: 'Coupons', icon: Tag },
