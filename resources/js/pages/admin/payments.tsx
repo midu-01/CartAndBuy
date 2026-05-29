@@ -26,7 +26,10 @@ interface Props {
     orders: {
         data: Order[];
         links: PaginationLink[];
-        meta: { current_page: number; last_page: number; total: number; per_page: number };
+        current_page: number;
+        last_page: number;
+        total: number;
+        per_page: number;
     };
     filters: { status?: string; method?: string; search?: string };
     counts: { all: number; pending_verification: number; paid: number; failed: number };
@@ -263,11 +266,11 @@ export default function AdminPaymentsPage({ orders, filters, counts }: Props) {
             </div>
 
             {/* Pagination */}
-            {orders.meta.last_page > 1 && (
+            {orders.last_page > 1 && (
                 <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
                     <span>
-                        Showing {(orders.meta.current_page - 1) * orders.meta.per_page + 1}–
-                        {Math.min(orders.meta.current_page * orders.meta.per_page, orders.meta.total)} of {orders.meta.total}
+                        Showing {(orders.current_page - 1) * orders.per_page + 1}–
+                        {Math.min(orders.current_page * orders.per_page, orders.total)} of {orders.total}
                     </span>
                     <div className="flex gap-1">
                         {orders.links.map((link, i) => (

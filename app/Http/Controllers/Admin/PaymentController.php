@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Refund;
+use App\Services\AdminActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +80,8 @@ class PaymentController extends Controller
             ]);
         });
 
+        AdminActivityLogger::log('payment.approved', Order::class, $order->id, "Payment approved for Order #{$order->id}.");
+
         Inertia::flash('toast', ['type' => 'success', 'message' => "Payment for Order #{$order->id} approved."]);
 
         return back();
@@ -114,6 +117,8 @@ class PaymentController extends Controller
                 'notes' => 'Rejected by admin.',
             ]);
         });
+
+        AdminActivityLogger::log('payment.rejected', Order::class, $order->id, "Payment rejected for Order #{$order->id}: {$request->reason}.");
 
         Inertia::flash('toast', ['type' => 'error', 'message' => "Payment for Order #{$order->id} rejected."]);
 
@@ -177,6 +182,8 @@ class PaymentController extends Controller
                 'verified_at' => now(),
             ]);
         });
+
+        AdminActivityLogger::log('refund.issued', Order::class, $order->id, "Refund of ৳{$request->amount} issued for Order #{$order->id} via {$request->refund_method}.");
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Refund of ৳{$request->amount} issued for Order #{$order->id}."]);
 

@@ -15,13 +15,16 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'role', 'current_team_id', 'points_balance', 'wallet_balance', 'referral_code', 'notification_preferences', 'phone', 'gender', 'birthday', 'avatar', 'marketing_email', 'marketing_sms'])]
+#[Fillable(['name', 'email', 'password', 'role', 'current_team_id', 'points_balance', 'wallet_balance', 'referral_code', 'notification_preferences', 'phone', 'gender', 'birthday', 'avatar', 'marketing_email', 'marketing_sms', 'admin_notes'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasTeams, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasTeams, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable {
+        HasTeams::teams insteadof HasRoles;
+    }
 
     protected function casts(): array
     {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,6 +30,7 @@ class CategoryController extends Controller
         $data['slug'] = Str::slug($data['name']);
 
         Category::create($data);
+        $this->bustCategoryCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category created.']);
 
@@ -45,6 +47,7 @@ class CategoryController extends Controller
         $data['slug'] = Str::slug($data['name']);
 
         $category->update($data);
+        $this->bustCategoryCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category updated.']);
 
@@ -54,9 +57,16 @@ class CategoryController extends Controller
     public function destroy(Category $category): RedirectResponse
     {
         $category->delete();
+        $this->bustCategoryCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category deleted.']);
 
         return back();
+    }
+
+    private function bustCategoryCaches(): void
+    {
+        Cache::forget('home_top_categories');
+        Cache::forget('ai_categories');
     }
 }

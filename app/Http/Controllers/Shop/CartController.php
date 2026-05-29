@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,10 +15,11 @@ use Inertia\Response;
 
 class CartController extends Controller
 {
+    public function __construct(private readonly CartService $cartService) {}
+
     public function show(Request $request): Response
     {
-        $cart = $this->resolveCart($request);
-        $cart->load(['items.product', 'items.variant']);
+        $cart = $this->cartService->resolveWithItems($request);
 
         return Inertia::render('shop/cart', [
             'cart' => $cart,
@@ -48,7 +49,7 @@ class CartController extends Controller
             return back()->withErrors(['quantity' => "{$product->name} is currently out of stock."]);
         }
 
-        $cart = $this->resolveCart($request);
+        $cart = $this->cartService->resolve($request);
         $item = $cart->items()
             ->where('product_id', $product->id)
             ->where('product_variant_id', $variant?->id)
@@ -93,38 +94,8 @@ class CartController extends Controller
 
     public function clear(Request $request): RedirectResponse
     {
-        $this->resolveCart($request)->items()->delete();
+        $this->cartService->resolve($request)->items()->delete();
 
         return back();
-    }
-
-    private function resolveCart(Request $request): Cart
-    {
-        $user = $request->user();
-        $sessionId = $request->session()->getId();
-
-        if ($user) {
-            $cart = Cart::firstOrCreate(['user_id' => $user->id]);
-            $guestCart = Cart::where('session_id', $sessionId)->first();
-
-            if ($guestCart && $guestCart->id !== $cart->id) {
-                foreach ($guestCart->items as $guestItem) {
-                    $existing = $cart->items()
-                        ->where('product_id', $guestItem->product_id)
-                        ->where('product_variant_id', $guestItem->product_variant_id)
-                        ->first();
-                    if ($existing) {
-                        $existing->increment('quantity', $guestItem->quantity);
-                    } else {
-                        $guestItem->update(['cart_id' => $cart->id]);
-                    }
-                }
-                $guestCart->delete();
-            }
-
-            return $cart;
-        }
-
-        return Cart::firstOrCreate(['session_id' => $sessionId]);
     }
 }

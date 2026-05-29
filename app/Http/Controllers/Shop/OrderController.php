@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\ShippingRule;
+use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +16,11 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly CartService $cartService) {}
+
     public function create(Request $request): Response|RedirectResponse
     {
-        $cart = $this->resolveCart($request);
+        $cart = $this->cartService->resolveWithItems($request);
 
         if (! $cart || $cart->items->isEmpty()) {
             return to_route('cart.show');
@@ -60,7 +62,7 @@ class OrderController extends Controller
             'redeem_points' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $cart = $this->resolveCart($request);
+        $cart = $this->cartService->resolveWithItems($request);
         abort_if(! $cart || $cart->items->isEmpty(), 422, 'Cart is empty.');
 
         $subtotal = $cart->items->sum(fn ($item) => $item->price * $item->quantity);
@@ -300,13 +302,7 @@ class OrderController extends Controller
             abort_if($request->query('token') !== $order->order_token, 403);
         }
 
-        $cart = clone $this->resolveCart($request);
-        if (! $cart) {
-            $sessionId = $request->session()->getId();
-            $cart = Cart::firstOrCreate(
-                $request->user() ? ['user_id' => $request->user()->id] : ['session_id' => $sessionId]
-            );
-        }
+        $cart = $this->cartService->resolve($request);
 
         foreach ($order->items as $item) {
             $product = $item->product;
@@ -347,17 +343,5 @@ class OrderController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Items added to cart from previous order.']);
 
         return to_route('cart.show');
-    }
-
-    private function resolveCart(Request $request): ?Cart
-    {
-        $user = $request->user();
-        $cartQuery = Cart::with(['items.product', 'items.variant']);
-
-        if ($user) {
-            return $cartQuery->where('user_id', $user->id)->first();
-        }
-
-        return $cartQuery->where('session_id', $request->session()->getId())->first();
     }
 }

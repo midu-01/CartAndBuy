@@ -17,7 +17,7 @@ class ProductController extends Controller
         $query = Product::with(['category', 'brand'])->published();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+            $query->search($request->search);
         }
         if ($request->filled('category')) {
             $category = Category::where('slug', $request->category)
@@ -25,21 +25,21 @@ class ProductController extends Controller
                 ->with('children')
                 ->first();
             if ($category) {
-                $ids = collect([$category->id])->merge($category->children->pluck('id'));
+                $ids = $category->children->pluck('id')->prepend($category->id);
                 $query->whereIn('category_id', $ids);
             }
         }
         if ($request->filled('brand')) {
-            $query->whereHas('brand', fn ($q) => $q->where('slug', $request->brand));
+            $query->forBrandSlug($request->brand);
         }
         if ($request->filled('label')) {
-            $query->where('label', $request->label);
+            $query->withLabel($request->label);
         }
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+        if ($request->filled('min_price') || $request->filled('max_price')) {
+            $query->priceRange(
+                $request->filled('min_price') ? (float) $request->min_price : null,
+                $request->filled('max_price') ? (float) $request->max_price : null,
+            );
         }
 
         $query->when($request->sort === 'price_asc', fn ($q) => $q->orderBy('price', 'asc'))
@@ -70,6 +70,8 @@ class ProductController extends Controller
         $relatedProducts = Product::published()
             ->where('id', '!=', $product->id)
             ->where('category_id', $product->category_id)
+            ->withAvg(['reviews as average_rating' => fn ($q) => $q->where('is_approved', true)], 'rating')
+            ->withCount(['reviews as review_count' => fn ($q) => $q->where('is_approved', true)])
             ->take(4)
             ->get();
 
@@ -96,17 +98,27 @@ class ProductController extends Controller
                 ->all()
         );
 
+        // Compute from already-loaded collection — avoids extra DB round-trips.
+        $approvedReviews = $product->reviews->where('is_approved', true);
+        $averageRating = $approvedReviews->isNotEmpty()
+            ? round((float) $approvedReviews->avg('rating'), 2)
+            : 0;
+
+        // userReviewed should be true even for unapproved reviews, so we can't rely
+        // on the approved-only collection loaded above — use a targeted exists() query.
+        $userReviewed = $user
+            ? $product->reviews()->where('user_id', $user->id)->exists()
+            : false;
+
         return Inertia::render('shop/product-detail', [
             'product' => $product,
-            'averageRating' => $product->reviews()->avg('rating') ?? 0,
+            'averageRating' => $averageRating,
             'relatedProducts' => $relatedProducts,
             'recentlyViewed' => $recentlyViewed,
             'userWishlisted' => $user
                 ? $user->wishlists()->where('product_id', $product->id)->exists()
                 : false,
-            'userReviewed' => $user
-                ? $product->reviews()->where('user_id', $user->id)->exists()
-                : false,
+            'userReviewed' => $userReviewed,
         ]);
     }
 }

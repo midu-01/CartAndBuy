@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import { cn } from '@/lib/utils';
 import Pagination from '@/components/shop/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -155,6 +156,11 @@ export default function AdminProductsPage({
     );
     const fileInputRef = useRef<HTMLInputElement>(null);
     const importInputRef = useRef<HTMLInputElement>(null);
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [bulkField, setBulkField] = useState('status');
+    const [bulkValue, setBulkValue] = useState('published');
+    const [bulkPending, setBulkPending] = useState(false);
+    const [showBulkForm, setShowBulkForm] = useState(false);
 
     const form = useForm<FormData>(emptyForm);
 
@@ -286,6 +292,33 @@ export default function AdminProductsPage({
         );
     }
 
+    function toggleAllProducts() {
+        if (selected.size === products.data.length) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(products.data.map((p) => p.id)));
+        }
+    }
+
+    function toggleOneProduct(id: number) {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }
+
+    function applyBulkUpdate() {
+        if (selected.size === 0) return;
+        setBulkPending(true);
+        router.post('/admin/products/bulk-update', { ids: [...selected], field: bulkField, value: bulkValue }, {
+            preserveScroll: true,
+            onFinish: () => { setBulkPending(false); setSelected(new Set()); setShowBulkForm(false); },
+        });
+    }
+
+    const allProductsChecked = products.data.length > 0 && selected.size === products.data.length;
+
     const tabs = [
         { key: 'basic' as const, label: 'Basic Info' },
         { key: 'media' as const, label: 'Media' },
@@ -392,12 +425,45 @@ export default function AdminProductsPage({
                 </a>
             </div>
 
+            {/* Bulk action bar */}
+            {selected.size > 0 && (
+                <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-[#1a1a2e] px-4 py-2.5 text-white text-sm">
+                    <span className="font-medium">{selected.size} selected</span>
+                    <span className="text-white/40">·</span>
+                    <span>Set</span>
+                    <select value={bulkField} onChange={(e) => setBulkField(e.target.value)} className="rounded-md bg-white/10 border border-white/20 px-2 py-1 text-xs text-white focus:outline-none">
+                        <option value="status" className="text-gray-900 bg-white">Status</option>
+                        <option value="is_active" className="text-gray-900 bg-white">Active</option>
+                        <option value="is_featured" className="text-gray-900 bg-white">Featured</option>
+                    </select>
+                    <span>to</span>
+                    <select value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} className="rounded-md bg-white/10 border border-white/20 px-2 py-1 text-xs text-white focus:outline-none">
+                        {bulkField === 'status' && <>
+                            <option value="published" className="text-gray-900 bg-white">Published</option>
+                            <option value="draft" className="text-gray-900 bg-white">Draft</option>
+                            <option value="scheduled" className="text-gray-900 bg-white">Scheduled</option>
+                        </>}
+                        {(bulkField === 'is_active' || bulkField === 'is_featured') && <>
+                            <option value="1" className="text-gray-900 bg-white">Yes</option>
+                            <option value="0" className="text-gray-900 bg-white">No</option>
+                        </>}
+                    </select>
+                    <Button size="sm" onClick={applyBulkUpdate} disabled={bulkPending} className="border-0 bg-[#e94560] text-white hover:bg-[#c73652] text-xs">
+                        {bulkPending ? 'Updating…' : 'Apply'}
+                    </Button>
+                    <button onClick={() => setSelected(new Set())} className="ml-auto text-white/60 hover:text-white text-xs">Clear</button>
+                </div>
+            )}
+
             {/* Table */}
             <div className="overflow-hidden rounded-xl border bg-white">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                             <tr>
+                                <th className="px-4 py-3">
+                                    <input type="checkbox" checked={allProductsChecked} onChange={toggleAllProducts} className="rounded" />
+                                </th>
                                 <th className="px-4 py-3 text-left">Product</th>
                                 <th className="px-4 py-3 text-left">SKU</th>
                                 <th className="px-4 py-3 text-left">Brand</th>
@@ -414,7 +480,10 @@ export default function AdminProductsPage({
                         </thead>
                         <tbody className="divide-y text-gray-900">
                             {products.data.map((p) => (
-                                <tr key={p.id} className="hover:bg-gray-50">
+                                <tr key={p.id} className={cn('hover:bg-gray-50', selected.has(p.id) && 'bg-blue-50')}>
+                                    <td className="px-4 py-3 text-center">
+                                        <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOneProduct(p.id)} className="rounded" />
+                                    </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             <img
@@ -529,7 +598,7 @@ export default function AdminProductsPage({
                             {products.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={9}
                                         className="px-4 py-10 text-center text-gray-400"
                                     >
                                         No products found

@@ -19,7 +19,7 @@ class AdminTest extends TestCase
 
     private function admin(): User
     {
-        return User::factory()->create(['role' => 'admin']);
+        return $this->createSuperAdmin();
     }
 
     private function customer(): User

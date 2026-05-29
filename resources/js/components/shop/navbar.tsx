@@ -51,14 +51,16 @@ export default function Navbar() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1">
-                        <Link href="/wishlist" className="relative p-2 hover:text-[#e94560] transition-colors hidden sm:block">
-                            <Heart className="size-5" />
-                            {wishlistProductIds?.length > 0 && (
-                                <Badge className="absolute -top-1 -right-1 size-4 p-0 flex items-center justify-center text-[10px] bg-[#e94560] border-0">
-                                    {wishlistProductIds.length}
-                                </Badge>
-                            )}
-                        </Link>
+                        {auth.user && (
+                            <Link href="/wishlist" className="relative p-2 hover:text-[#e94560] transition-colors hidden sm:block">
+                                <Heart className="size-5" />
+                                {wishlistProductIds?.length > 0 && (
+                                    <Badge className="absolute -top-1 -right-1 size-4 p-0 flex items-center justify-center text-[10px] bg-[#e94560] border-0">
+                                        {wishlistProductIds.length}
+                                    </Badge>
+                                )}
+                            </Link>
+                        )}
 
                         <Link href="/cart" className="relative p-2 hover:text-[#e94560] transition-colors">
                             <ShoppingCart className="size-5" />

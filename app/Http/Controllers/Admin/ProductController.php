@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -66,6 +67,7 @@ class ProductController extends Controller
         $product = new Product;
         $product->forceFill($data)->save();
         $this->syncVariants($product, $variants);
+        $this->bustProductCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product created.']);
 
@@ -93,6 +95,7 @@ class ProductController extends Controller
 
         $product->forceFill($data)->save();
         $this->syncVariants($product, $variants);
+        $this->bustProductCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product updated.']);
 
@@ -122,6 +125,7 @@ class ProductController extends Controller
     public function destroy(Product $product): RedirectResponse
     {
         $product->delete();
+        $this->bustProductCaches();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
 
@@ -176,6 +180,27 @@ class ProductController extends Controller
 
             fclose($handle);
         }, 'products.csv', $headers);
+    }
+
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'field' => ['required', 'in:status,is_active,is_featured,category_id'],
+            'value' => ['required'],
+        ]);
+
+        $allowed = ['status', 'is_active', 'is_featured', 'category_id'];
+        $field = $request->field;
+
+        abort_unless(in_array($field, $allowed), 422, 'Invalid field.');
+
+        Product::whereIn('id', $request->ids)->update([$field => $request->value]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => count($request->ids).' product(s) updated.']);
+
+        return back();
     }
 
     public function import(Request $request): RedirectResponse
@@ -381,5 +406,13 @@ class ProductController extends Controller
         $product->variants()
             ->when($keptIds !== [], fn ($query) => $query->whereNotIn('id', $keptIds))
             ->delete();
+    }
+
+    private function bustProductCaches(): void
+    {
+        Cache::forget('home_featured_products');
+        Cache::forget('home_hero_products');
+        Cache::forget('admin_dashboard_stats');
+        Cache::forget('admin_dashboard_top_products');
     }
 }

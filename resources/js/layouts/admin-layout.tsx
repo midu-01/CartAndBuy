@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     BarChart3,
     Bookmark,
     CreditCard,
@@ -8,8 +9,10 @@ import {
     LogOut,
     MessageSquare,
     Package,
+    Shield,
     ShoppingCart,
     Tag,
+    TrendingUp,
     Users,
 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -27,6 +30,9 @@ const navItems = [
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/coupons', label: 'Coupons', icon: Tag },
     { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
+    { href: '/admin/reports', label: 'Reports', icon: TrendingUp },
+    { href: '/admin/activity-log', label: 'Activity Log', icon: Activity },
+    { href: '/admin/roles', label: 'Roles', icon: Shield },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -87,7 +93,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex-1 ml-64 flex flex-col min-h-screen">
                 <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
                     <h1 className="text-lg font-semibold text-gray-800">
-                        {navItems.find((n) => url.startsWith(n.href))?.label ?? 'Admin'}
+                        {navItems.find((n) => url.startsWith(n.href))?.label
+                            ?? (url.startsWith('/admin/orders/create') ? 'Create Order' : 'Admin')}
                     </h1>
                     <Link href="/" className="text-sm text-[#e94560] hover:underline">
                         ← View Store

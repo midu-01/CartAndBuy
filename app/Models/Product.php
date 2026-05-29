@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'name', 'slug', 'sku', 'description', 'price', 'sale_price',
+    'name', 'slug', 'sku', 'description', 'price', 'sale_price', 'cost_price',
     'stock_qty', 'category_id', 'brand_id', 'images', 'tags', 'label',
     'is_featured', 'is_active', 'status', 'publish_at', 'video_url',
     'size_chart', 'faqs', 'low_stock_threshold',
@@ -28,6 +28,7 @@ class Product extends Model
             'faqs' => 'array',
             'price' => 'decimal:2',
             'sale_price' => 'decimal:2',
+            'cost_price' => 'decimal:2',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             'publish_at' => 'datetime',
@@ -141,5 +142,50 @@ class Product extends Model
     {
         $query->where('stock_qty', '>', 0)
             ->whereColumn('stock_qty', '<=', 'low_stock_threshold');
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopeInStock(Builder $query): void
+    {
+        $query->where('stock_qty', '>', 0);
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopeDiscounted(Builder $query): void
+    {
+        $query->whereNotNull('sale_price');
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopeSearch(Builder $query, string $term): void
+    {
+        $query->where(function (Builder $q) use ($term): void {
+            $q->where('name', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%");
+        });
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopePriceRange(Builder $query, ?float $min = null, ?float $max = null): void
+    {
+        if ($min !== null) {
+            $query->where('price', '>=', $min);
+        }
+
+        if ($max !== null) {
+            $query->where(fn (Builder $q) => $q->whereRaw('COALESCE(sale_price, price) <= ?', [$max]));
+        }
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopeForBrandSlug(Builder $query, string $slug): void
+    {
+        $query->whereHas('brand', fn (Builder $q) => $q->where('slug', $slug));
+    }
+
+    /** @param Builder<Product> $query */
+    public function scopeWithLabel(Builder $query, string $label): void
+    {
+        $query->where('label', $label);
     }
 }

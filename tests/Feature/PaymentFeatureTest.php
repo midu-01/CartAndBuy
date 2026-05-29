@@ -15,7 +15,7 @@ class PaymentFeatureTest extends TestCase
 
     private function adminUser(): User
     {
-        return User::factory()->create(['role' => 'admin']);
+        return $this->createSuperAdmin();
     }
 
     private function orderWithDigitalPayment(array $overrides = []): Order
@@ -344,7 +344,7 @@ class PaymentFeatureTest extends TestCase
 
     public function test_webhook_does_not_re_process_already_paid_order(): void
     {
-        $order = Order::factory()->create([
+        Order::factory()->create([
             'payment_method' => 'bkash',
             'payment_status' => 'paid',
             'transaction_id' => 'BKSH_TXN_003',

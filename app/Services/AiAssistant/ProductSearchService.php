@@ -5,6 +5,7 @@ namespace App\Services\AiAssistant;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProductSearchService
@@ -18,37 +19,27 @@ class ProductSearchService
         $query = Product::with(['category', 'reviews'])->active();
 
         if (! empty($params['keyword'])) {
-            $keyword = $params['keyword'];
-            $query->where(function ($q) use ($keyword) {
-                $q->where('name', 'like', "%{$keyword}%")
-                    ->orWhere('description', 'like', "%{$keyword}%");
-            });
+            $query->search($params['keyword']);
         }
 
         if (! empty($params['category_id'])) {
             $query->whereIn('category_id', (array) $params['category_id']);
         }
 
-        if (! empty($params['min_price'])) {
-            $query->where('price', '>=', $params['min_price']);
-        }
-
-        if (! empty($params['max_price'])) {
-            $query->where(function ($q) use ($params) {
-                $q->whereRaw('COALESCE(sale_price, price) <= ?', [$params['max_price']]);
-            });
+        if (! empty($params['min_price']) || ! empty($params['max_price'])) {
+            $query->priceRange($params['min_price'] ?? null, $params['max_price'] ?? null);
         }
 
         if (! empty($params['in_stock'])) {
-            $query->where('stock_qty', '>', 0);
+            $query->inStock();
         }
 
         if (! empty($params['discounted'])) {
-            $query->whereNotNull('sale_price');
+            $query->discounted();
         }
 
         if (! empty($params['featured'])) {
-            $query->where('is_featured', true);
+            $query->featured();
         }
 
         match ($params['sort'] ?? 'latest') {
@@ -57,12 +48,11 @@ class ProductSearchService
             default => $query->latest(),
         };
 
-        $total = $query->count();
         $products = $query->take(6)->get();
 
         return [
             'products' => $products,
-            'total' => $total,
+            'total' => $products->count(),
             'search_params' => $params,
         ];
     }
@@ -122,12 +112,12 @@ class ProductSearchService
             $params['in_stock'] = true;
         }
 
-        // Category detection against DB
-        $categories = Category::all();
+        // Category detection against DB — cached to avoid a query on every AI message.
+        $categories = Cache::remember('ai_categories', 300, fn () => Category::with('children')->get());
+
         foreach ($categories as $category) {
             if (Str::contains($lower, Str::lower($category->name))) {
-                $childIds = $category->children()->pluck('id');
-                $params['category_id'] = $childIds->push($category->id)->toArray();
+                $params['category_id'] = $category->children->pluck('id')->push($category->id)->toArray();
                 break;
             }
         }
@@ -173,6 +163,8 @@ class ProductSearchService
     public function formatProducts(Collection $products): array
     {
         return $products->map(function (Product $product): array {
+            $reviewCount = $product->reviews->count();
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -181,8 +173,8 @@ class ProductSearchService
                 'sale_price' => $product->sale_price ? (float) $product->sale_price : null,
                 'image' => $product->images[0] ?? null,
                 'category' => $product->category?->name,
-                'rating' => $product->reviews->count() > 0 ? round((float) $product->reviews->avg('rating'), 1) : null,
-                'review_count' => $product->reviews->count(),
+                'rating' => $reviewCount > 0 ? round((float) $product->reviews->avg('rating'), 1) : null,
+                'review_count' => $reviewCount,
                 'in_stock' => $product->isInStock(),
                 'stock_qty' => $product->stock_qty,
                 'description' => $product->description ? Str::limit($product->description, 100) : null,

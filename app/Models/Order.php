@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'user_id', 'guest_email', 'guest_phone', 'status', 'subtotal', 'shipping_cost', 'total',
+    'user_id', 'guest_email', 'guest_phone', 'status', 'subtotal', 'shipping_cost', 'tax_rate', 'tax_amount', 'total',
     'shipping_address', 'payment_method', 'payment_status', 'coupon_code', 'discount_amount',
     'points_redeemed', 'wallet_used',
     'transaction_id', 'payment_receipt', 'payment_failure_reason', 'payment_verified_at', 'payment_verified_by',
@@ -26,6 +26,8 @@ class Order extends Model
             'shipping_address' => 'array',
             'subtotal' => 'decimal:2',
             'shipping_cost' => 'decimal:2',
+            'tax_rate' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'is_gift' => 'boolean',

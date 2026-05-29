@@ -43,7 +43,7 @@ class AiAssistantService
             'coupon_info' => $this->handleCouponInfo(),
             'compare_products' => $this->handleCompareProducts($context),
             'size_guide' => $this->handleSizeGuide(),
-            'budget_filter' => $this->handleBudgetFilter($request, $userMessage, $context),
+            'budget_filter' => $this->handleBudgetFilter($userMessage, $context),
             'bengali_response' => $this->handleBengaliResponse(),
             default => $this->handleGeneral($request, $userMessage, $context),
         };
@@ -593,6 +593,7 @@ class AiAssistantService
             ];
         }
 
+        // Load only approved reviews; compute stats from the loaded collection.
         $reviews = $product->reviews()->where('is_approved', true)->with('user')->latest()->take(3)->get();
 
         if ($reviews->isEmpty()) {
@@ -605,8 +606,8 @@ class AiAssistantService
             ];
         }
 
-        $avgRating = round((float) $product->reviews()->where('is_approved', true)->avg('rating'), 1);
         $totalReviews = $product->reviews()->where('is_approved', true)->count();
+        $avgRating = round((float) $reviews->avg('rating'), 1);
 
         $reviewText = "**{$product->name}** — ⭐ {$avgRating}/5 from {$totalReviews} review".($totalReviews > 1 ? 's' : '')."\n\n";
 
@@ -750,7 +751,7 @@ class AiAssistantService
      * @param  array<string, mixed>  $context
      * @return array<string, mixed>
      */
-    private function handleBudgetFilter(Request $request, string $message, array $context): array
+    private function handleBudgetFilter(string $message, array $context): array
     {
         $budget = null;
         if (preg_match('/(?:only have|i have|my budget is|budget|have only|within)\s+(?:tk\.?|bdt\.?|৳)?\s*(\d+)/i', $message, $m)) {

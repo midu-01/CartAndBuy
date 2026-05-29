@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['product_id', 'sku', 'attributes', 'price_modifier', 'stock_qty', 'images', 'is_active'])]
+#[Fillable(['product_id', 'sku', 'attributes', 'price_modifier', 'cost_price', 'stock_qty', 'images', 'is_active'])]
 class ProductVariant extends Model
 {
     use HasFactory;
@@ -18,6 +18,7 @@ class ProductVariant extends Model
             'attributes' => 'array',
             'images' => 'array',
             'price_modifier' => 'decimal:2',
+            'cost_price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
