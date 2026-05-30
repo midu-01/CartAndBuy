@@ -6,14 +6,10 @@ import AiMessageBubble from './AiMessageBubble';
 import type { AiApiResponse, AiProduct, ChatMessage, QuickAction } from './types';
 
 const QUICK_ACTIONS: QuickAction[] = [
-    { label: '🛍️ Best Sellers', action: 'quick', message: 'Show me best sellers' },
-    { label: '🔍 All Products', action: 'quick', message: 'Show me all products' },
-    { label: '🛒 My Cart', action: 'quick', message: 'Show my cart' },
-    { label: '🚚 Delivery', action: 'quick', message: 'Tell me about delivery' },
-    { label: '📦 My Orders', action: 'quick', message: 'Show my recent orders' },
-    { label: '❤️ Wishlist', action: 'quick', message: 'Show my wishlist' },
-    { label: '🎁 Coupons', action: 'quick', message: 'Do you have any coupons?' },
-    { label: '📏 Size Guide', action: 'quick', message: 'Show me the size guide' },
+    { label: 'What are your best sellers?', action: 'quick', message: 'Show me best sellers' },
+    { label: "What's in my cart?", action: 'quick', message: 'Show my cart' },
+    { label: 'How long does delivery take?', action: 'quick', message: 'Tell me about delivery' },
+    { label: 'Any coupons available?', action: 'quick', message: 'Do you have any coupons?' },
 ];
 
 function makeBotMessage(partial: Omit<ChatMessage, 'id' | 'timestamp' | 'role'>): ChatMessage {
@@ -45,8 +41,7 @@ export default function AiChatWindow({ onClose }: Props) {
     useEffect(() => {
         setMessages([
             makeBotMessage({
-                content:
-                    "Hi! I'm your CartAndBuy AI assistant ✦\n\nI can help you find products, manage your cart, check orders, discover coupons, and more. How can I help you today?",
+                content: 'Hey! How can I help you today? ✦',
                 type: 'text',
                 actions: QUICK_ACTIONS,
             }),
@@ -96,6 +91,7 @@ export default function AiChatWindow({ onClose }: Props) {
                     type: data.type,
                     products: data.products,
                     cart: data.cart,
+                    coupons: data.coupons,
                     actions: data.actions,
                 }),
             ]);
@@ -314,9 +310,6 @@ export default function AiChatWindow({ onClose }: Props) {
                     </div>
                 </div>
 
-                <p className="text-[10px] text-gray-300 text-center mt-2 font-medium tracking-wide">
-                    Powered by AI · CartAndBuy
-                </p>
             </div>
         </div>
     );

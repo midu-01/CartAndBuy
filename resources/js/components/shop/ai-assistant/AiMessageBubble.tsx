@@ -1,6 +1,7 @@
 import { Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AiCartSummary from './AiCartSummary';
+import AiCouponCard from './AiCouponCard';
 import AiProductCard from './AiProductCard';
 import type { AiProduct, ChatMessage, QuickAction } from './types';
 
@@ -53,6 +54,15 @@ export default function AiMessageBubble({ message, onQuickAction, onAddToCart }:
                 {message.cart && !message.cart.is_empty && (
                     <div className="w-full bg-white rounded-2xl border border-gray-100/80 shadow-sm p-4">
                         <AiCartSummary cart={message.cart} />
+                    </div>
+                )}
+
+                {/* Coupon cards */}
+                {message.coupons && message.coupons.length > 0 && (
+                    <div className="w-full space-y-2">
+                        {message.coupons.map((coupon) => (
+                            <AiCouponCard key={coupon.code} coupon={coupon} />
+                        ))}
                     </div>
                 )}
 

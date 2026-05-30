@@ -47,18 +47,30 @@ export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
-    type: 'text' | 'products' | 'cart' | 'error';
+    type: 'text' | 'products' | 'cart' | 'coupons' | 'error';
     products?: AiProduct[];
     cart?: AiCart;
+    coupons?: AiCoupon[];
     actions?: QuickAction[];
     timestamp: Date;
 }
 
+export interface AiCoupon {
+    code: string;
+    type: 'percent' | 'fixed';
+    value: number;
+    discount_label: string;
+    min_order: number | null;
+    max_discount: number | null;
+    expires_at: string | null;
+}
+
 export interface AiApiResponse {
     message: string;
-    type: 'text' | 'products' | 'cart' | 'error';
+    type: 'text' | 'products' | 'cart' | 'coupons' | 'error';
     products?: AiProduct[];
     cart?: AiCart;
+    coupons?: AiCoupon[];
     actions?: QuickAction[];
     search_params?: Record<string, unknown>;
 }

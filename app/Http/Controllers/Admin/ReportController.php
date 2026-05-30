@@ -116,7 +116,7 @@ class ReportController extends Controller
         $rows = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'products.id', '=', 'order_items.product_id')
-            ->select('products.id', 'products.name', DB::raw('SUM(order_items.quantity) as qty_sold'), DB::raw('SUM(order_items.quantity * order_items.price) as revenue'))
+            ->select('products.id', 'products.name', DB::raw('SUM(order_items.quantity) as qty_sold'), DB::raw('SUM(order_items.total_price) as revenue'))
             ->whereBetween('orders.created_at', [$from, $to.' 23:59:59'])
             ->whereNotIn('orders.status', ['cancelled'])
             ->groupBy('products.id', 'products.name')
@@ -145,7 +145,7 @@ class ReportController extends Controller
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
-            ->select('categories.name as category', DB::raw('SUM(order_items.quantity) as qty_sold'), DB::raw('SUM(order_items.quantity * order_items.price) as revenue'))
+            ->select('categories.name as category', DB::raw('SUM(order_items.quantity) as qty_sold'), DB::raw('SUM(order_items.total_price) as revenue'))
             ->whereBetween('orders.created_at', [$from, $to.' 23:59:59'])
             ->whereNotIn('orders.status', ['cancelled'])
             ->groupBy('categories.name')
@@ -365,9 +365,9 @@ class ReportController extends Controller
                 'products.id',
                 'products.name',
                 DB::raw('SUM(order_items.quantity) as qty_sold'),
-                DB::raw('SUM(order_items.quantity * order_items.price) as revenue'),
+                DB::raw('SUM(order_items.total_price) as revenue'),
                 DB::raw('SUM(order_items.quantity * COALESCE(products.cost_price, 0)) as cost'),
-                DB::raw('SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * COALESCE(products.cost_price, 0)) as profit')
+                DB::raw('SUM(order_items.total_price) - SUM(order_items.quantity * COALESCE(products.cost_price, 0)) as profit')
             )
             ->whereBetween('orders.created_at', [$from, $to.' 23:59:59'])
             ->whereNotIn('orders.status', ['cancelled'])

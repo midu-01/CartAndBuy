@@ -112,22 +112,42 @@ class ProductSearchService
             $params['in_stock'] = true;
         }
 
-        // Category detection against DB — cached to avoid a query on every AI message.
-        $categories = Cache::remember('ai_categories', 300, fn () => Category::with('children')->get());
+        // Category detection — cache only plain arrays to avoid serialisation issues.
+        /** @var array<int, array{id: int, name: string, children_ids: array<int, int>}> $categories */
+        $categories = Cache::remember('ai_categories_v2', 300, function () {
+            // Clear any legacy cache key that stored full Eloquent models.
+            Cache::forget('ai_categories');
+
+            return Category::with('children')->get()->map(fn (Category $cat) => [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'children_ids' => $cat->children->pluck('id')->all(),
+            ])->all();
+        });
 
         foreach ($categories as $category) {
-            if (Str::contains($lower, Str::lower($category->name))) {
-                $params['category_id'] = $category->children->pluck('id')->push($category->id)->toArray();
+            if (Str::contains($lower, Str::lower($category['name']))) {
+                $params['category_id'] = array_merge($category['children_ids'], [$category['id']]);
                 break;
             }
         }
 
         // Keyword extraction — strip intent/filter words and extract the core noun phrase
         $stopWords = [
+            // Intent / action phrases
             'show', 'me', 'find', 'search', 'get', 'give', 'need', 'want', 'looking for',
-            'do you have', 'best', 'latest', 'newest', 'cheapest', 'discounted', 'sale',
+            'do you have', 'can you', 'could you', 'would you', 'please',
+            // Filter / sort words
+            'best', 'latest', 'newest', 'cheapest', 'discounted', 'sale',
             'offer', 'popular', 'featured', 'under', 'below', 'above', 'between', 'and',
-            'to', 'in stock', 'available', 'please', 'some', 'any', 'the', 'a', 'an', 'all',
+            'to', 'in stock', 'available', 'some', 'any', 'the', 'a', 'an', 'all',
+            // Common filler / conversational words
+            'i', 'it', 'its', 'is', 'are', 'was', 'were', 'be', 'been',
+            'this', 'that', 'these', 'those', 'my', 'your', 'our', 'their',
+            'for', 'of', 'with', 'on', 'in', 'at', 'from', 'by', 'or', 'but', 'if',
+            'can', 'could', 'would', 'will', 'just', 'also', 'too', 'very', 'really',
+            'something', 'one', 'ones', 'like', 'prefer',
+            'buy', 'purchase', 'order', 'have', 'has', 'got',
         ];
 
         $keyword = $message;
@@ -141,7 +161,7 @@ class ProductSearchService
         // Strip category names if detected
         if (! empty($params['category_id'])) {
             foreach ($categories as $category) {
-                $keyword = (string) str_ireplace($category->name, '', $keyword);
+                $keyword = (string) str_ireplace($category['name'], '', $keyword);
             }
         }
 

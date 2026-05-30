@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,21 +16,13 @@ class CouponController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/coupons', [
-            'coupons' => Coupon::latest()->paginate(20)->withQueryString(),
+            'coupons' => Coupon::with('user:id,name,email')->latest()->paginate(20)->withQueryString(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:coupons'],
-            'type' => ['required', 'in:percent,fixed'],
-            'value' => ['required', 'numeric', 'min:0'],
-            'min_order' => ['nullable', 'numeric', 'min:0'],
-            'max_uses' => ['nullable', 'integer', 'min:1'],
-            'expires_at' => ['nullable', 'date'],
-            'is_active' => ['boolean'],
-        ]);
+        $data = $this->validated($request);
 
         Coupon::create($data);
 
@@ -40,15 +33,7 @@ class CouponController extends Controller
 
     public function update(Request $request, Coupon $coupon): RedirectResponse
     {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'max:50', "unique:coupons,code,{$coupon->id}"],
-            'type' => ['required', 'in:percent,fixed'],
-            'value' => ['required', 'numeric', 'min:0'],
-            'min_order' => ['nullable', 'numeric', 'min:0'],
-            'max_uses' => ['nullable', 'integer', 'min:1'],
-            'expires_at' => ['nullable', 'date'],
-            'is_active' => ['boolean'],
-        ]);
+        $data = $this->validated($request, $coupon->id);
 
         $coupon->update($data);
 
@@ -73,12 +58,13 @@ class CouponController extends Controller
             'count' => ['required', 'integer', 'min:1', 'max:200'],
             'type' => ['required', 'in:percent,fixed'],
             'value' => ['required', 'numeric', 'min:0'],
+            'max_discount' => ['nullable', 'numeric', 'min:0'],
             'min_order' => ['nullable', 'numeric', 'min:0'],
             'max_uses' => ['nullable', 'integer', 'min:1'],
+            'once_per_customer' => ['boolean'],
             'expires_at' => ['nullable', 'date'],
         ]);
 
-        // Generate all codes upfront then deduplicate against the database in one query.
         $candidates = [];
         while (count($candidates) < $request->count) {
             $candidates[] = strtoupper($request->prefix.'-'.Str::random(6));
@@ -93,8 +79,12 @@ class CouponController extends Controller
             'code' => $code,
             'type' => $request->type,
             'value' => $request->value,
-            'min_order' => $request->min_order,
+            'max_discount' => $request->max_discount,
+            'min_order' => $request->min_order ?? 0,
             'max_uses' => $request->max_uses,
+            'once_per_customer' => (bool) $request->boolean('once_per_customer'),
+            'new_customers_only' => false,
+            'user_id' => null,
             'expires_at' => $request->expires_at,
             'is_active' => true,
             'used_count' => 0,
@@ -108,5 +98,36 @@ class CouponController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => "{$created} coupon(s) generated."]);
 
         return back();
+    }
+
+    /** @return array<string, mixed> */
+    private function validated(Request $request, ?int $ignoreId = null): array
+    {
+        $uniqueRule = $ignoreId
+            ? "unique:coupons,code,{$ignoreId}"
+            : 'unique:coupons';
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50', $uniqueRule],
+            'type' => ['required', 'in:percent,fixed'],
+            'value' => ['required', 'numeric', 'min:0'],
+            'max_discount' => ['nullable', 'numeric', 'min:0'],
+            'min_order' => ['nullable', 'numeric', 'min:0'],
+            'max_uses' => ['nullable', 'integer', 'min:1'],
+            'once_per_customer' => ['boolean'],
+            'new_customers_only' => ['boolean'],
+            'user_email' => ['nullable', 'string', 'email', 'exists:users,email'],
+            'expires_at' => ['nullable', 'date'],
+            'is_active' => ['boolean'],
+        ]);
+
+        // Resolve user_email → user_id
+        $data['user_id'] = null;
+        if (! empty($data['user_email'])) {
+            $data['user_id'] = User::where('email', $data['user_email'])->value('id');
+        }
+        unset($data['user_email']);
+
+        return $data;
     }
 }

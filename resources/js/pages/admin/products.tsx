@@ -427,31 +427,31 @@ export default function AdminProductsPage({
 
             {/* Bulk action bar */}
             {selected.size > 0 && (
-                <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-[#1a1a2e] px-4 py-2.5 text-white text-sm">
-                    <span className="font-medium">{selected.size} selected</span>
-                    <span className="text-white/40">·</span>
-                    <span>Set</span>
-                    <select value={bulkField} onChange={(e) => setBulkField(e.target.value)} className="rounded-md bg-white/10 border border-white/20 px-2 py-1 text-xs text-white focus:outline-none">
-                        <option value="status" className="text-gray-900 bg-white">Status</option>
-                        <option value="is_active" className="text-gray-900 bg-white">Active</option>
-                        <option value="is_featured" className="text-gray-900 bg-white">Featured</option>
+                <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-white border border-gray-200 px-4 py-2.5 text-gray-700 text-sm shadow-sm">
+                    <span className="font-semibold text-[#e94560]">{selected.size} selected</span>
+                    <span className="text-gray-300">·</span>
+                    <span className="text-gray-500">Set</span>
+                    <select value={bulkField} onChange={(e) => setBulkField(e.target.value)} className="rounded-md bg-gray-50 border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#e94560]">
+                        <option value="status">Status</option>
+                        <option value="is_active">Active</option>
+                        <option value="is_featured">Featured</option>
                     </select>
-                    <span>to</span>
-                    <select value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} className="rounded-md bg-white/10 border border-white/20 px-2 py-1 text-xs text-white focus:outline-none">
+                    <span className="text-gray-500">to</span>
+                    <select value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} className="rounded-md bg-gray-50 border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#e94560]">
                         {bulkField === 'status' && <>
-                            <option value="published" className="text-gray-900 bg-white">Published</option>
-                            <option value="draft" className="text-gray-900 bg-white">Draft</option>
-                            <option value="scheduled" className="text-gray-900 bg-white">Scheduled</option>
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                            <option value="scheduled">Scheduled</option>
                         </>}
                         {(bulkField === 'is_active' || bulkField === 'is_featured') && <>
-                            <option value="1" className="text-gray-900 bg-white">Yes</option>
-                            <option value="0" className="text-gray-900 bg-white">No</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
                         </>}
                     </select>
                     <Button size="sm" onClick={applyBulkUpdate} disabled={bulkPending} className="border-0 bg-[#e94560] text-white hover:bg-[#c73652] text-xs">
                         {bulkPending ? 'Updating…' : 'Apply'}
                     </Button>
-                    <button onClick={() => setSelected(new Set())} className="ml-auto text-white/60 hover:text-white text-xs">Clear</button>
+                    <button onClick={() => setSelected(new Set())} className="ml-auto text-gray-400 hover:text-gray-700 text-xs">Clear</button>
                 </div>
             )}
 

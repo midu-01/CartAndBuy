@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Coupon;
+use App\Models\Order;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -119,5 +121,92 @@ class CouponTest extends TestCase
         $response = $this->postValidate([]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['code', 'order_total']);
+    }
+
+    // ─── Once per customer ────────────────────────────────────────────────────
+
+    public function test_once_per_customer_coupon_rejected_for_returning_user(): void
+    {
+        $user = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->oncePerCustomer()->create(['code' => 'ONCE10']);
+        Order::factory()->create(['user_id' => $user->id, 'coupon_code' => 'ONCE10']);
+
+        $response = $this->actingAs($user)
+            ->postValidate(['code' => 'ONCE10', 'order_total' => 100]);
+
+        $response->assertStatus(422)->assertJson(['valid' => false]);
+        $this->assertStringContainsStringIgnoringCase('already used', $response->json('message'));
+    }
+
+    public function test_once_per_customer_coupon_valid_for_first_use(): void
+    {
+        $user = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->oncePerCustomer()->create();
+
+        $response = $this->actingAs($user)
+            ->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertOk()->assertJson(['valid' => true]);
+    }
+
+    // ─── New customers only ───────────────────────────────────────────────────
+
+    public function test_new_customers_only_coupon_rejected_for_returning_customer(): void
+    {
+        $user = User::factory()->create();
+        Order::factory()->create(['user_id' => $user->id]);
+        $coupon = Coupon::factory()->percent(10)->newCustomersOnly()->create();
+
+        $response = $this->actingAs($user)
+            ->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertStatus(422)->assertJson(['valid' => false]);
+        $this->assertStringContainsStringIgnoringCase('new customers', $response->json('message'));
+    }
+
+    public function test_new_customers_only_coupon_valid_for_user_with_no_orders(): void
+    {
+        $user = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->newCustomersOnly()->create();
+
+        $response = $this->actingAs($user)
+            ->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertOk()->assertJson(['valid' => true]);
+    }
+
+    // ─── Specific user ────────────────────────────────────────────────────────
+
+    public function test_specific_user_coupon_rejected_for_wrong_user(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->forUser($owner->id)->create();
+
+        $response = $this->actingAs($other)
+            ->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertStatus(422)->assertJson(['valid' => false]);
+    }
+
+    public function test_specific_user_coupon_valid_for_correct_user(): void
+    {
+        $user = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->forUser($user->id)->create();
+
+        $response = $this->actingAs($user)
+            ->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertOk()->assertJson(['valid' => true]);
+    }
+
+    public function test_specific_user_coupon_rejected_when_unauthenticated(): void
+    {
+        $user = User::factory()->create();
+        $coupon = Coupon::factory()->percent(10)->forUser($user->id)->create();
+
+        $response = $this->postValidate(['code' => $coupon->code, 'order_total' => 100]);
+
+        $response->assertStatus(422)->assertJson(['valid' => false]);
     }
 }

@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
-    public function validate(Request $request)
+    public function validate(Request $request): JsonResponse
     {
         $request->validate([
             'code' => 'required|string',
@@ -22,8 +23,16 @@ class CouponController extends Controller
         }
 
         $user = $request->user();
-        if ($user && $coupon->hasBeenUsedByUser($user->id)) {
-            return response()->json(['valid' => false, 'message' => 'You have already used this coupon.'], 422);
+
+        if (! $coupon->meetsUserRestrictions($user)) {
+            $message = match (true) {
+                $coupon->new_customers_only => 'This coupon is only for new customers.',
+                (bool) $coupon->user_id => 'This coupon is not available for your account.',
+                $coupon->once_per_customer => 'You have already used this coupon.',
+                default => 'This coupon is not available for your account.',
+            };
+
+            return response()->json(['valid' => false, 'message' => $message], 422);
         }
 
         return response()->json([

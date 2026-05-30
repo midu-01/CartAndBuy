@@ -20,7 +20,7 @@ class AiAssistantService
     /**
      * Handle a user message and return a structured response.
      *
-     * @return array{message: string, type: string, products?: array<int, array<string, mixed>>, cart?: array<string, mixed>, actions?: array<int, array<string, string>>}
+     * @return array{message: string, type: string, products?: array<int, array<string, mixed>>, cart?: array<string, mixed>, coupons?: array<int, array<string, mixed>>, actions?: array<int, array<string, string>>}
      */
     public function handle(Request $request, string $userMessage): array
     {
@@ -40,7 +40,7 @@ class AiAssistantService
             'wishlist_view' => $this->handleWishlistView($request),
             'wishlist_add' => $this->handleWishlistAdd($request, $context),
             'show_reviews' => $this->handleShowReviews($userMessage, $context),
-            'coupon_info' => $this->handleCouponInfo(),
+            'coupon_info' => $this->handleCouponInfo($request),
             'compare_products' => $this->handleCompareProducts($context),
             'size_guide' => $this->handleSizeGuide(),
             'budget_filter' => $this->handleBudgetFilter($userMessage, $context),
@@ -630,40 +630,80 @@ class AiAssistantService
     }
 
     /** @return array<string, mixed> */
-    private function handleCouponInfo(): array
+    private function handleCouponInfo(Request $request): array
     {
-        $coupons = Coupon::where('is_active', true)
+        if (! $request->user()) {
+            return [
+                'message' => 'Please log in to view available coupons for your account.',
+                'type' => 'text',
+                'actions' => [
+                    ['label' => 'Login', 'action' => 'link', 'url' => '/login'],
+                    ['label' => 'Register', 'action' => 'link', 'url' => '/register'],
+                ],
+            ];
+        }
+
+        $user = $request->user();
+        $hasOrders = Order::where('user_id', $user->id)->exists();
+
+        // Load all globally valid coupons scoped to public or this specific user
+        $eligible = Coupon::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->where(function ($q) {
                 $q->whereNull('max_uses')->orWhereColumn('used_count', '<', 'max_uses');
             })
-            ->take(5)
-            ->get();
+            ->where(function ($q) use ($user) {
+                $q->whereNull('user_id')->orWhere('user_id', $user->id);
+            })
+            ->get()
+            ->filter(function (Coupon $coupon) use ($user, $hasOrders): bool {
+                if ($coupon->new_customers_only && $hasOrders) {
+                    return false;
+                }
 
-        if ($coupons->isEmpty()) {
+                if ($coupon->once_per_customer && $coupon->hasBeenUsedByUser($user->id)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+        if ($eligible->isEmpty()) {
             return [
-                'message' => "No active coupons right now, but check back soon for deals! 🎁\n\nDon't forget — you get **free shipping** on orders above ৳2,000.",
+                'message' => "No active coupons are available for your account right now.\n\nDon't forget — you get **free shipping** on orders above ৳2,000!",
                 'type' => 'text',
                 'actions' => [
-                    ['label' => 'Browse Products', 'action' => 'link', 'url' => '/shop'],
+                    ['label' => 'Shop Now', 'action' => 'link', 'url' => '/shop'],
                 ],
             ];
         }
 
-        $couponText = "🎁 **Available Coupons:**\n\n";
-        foreach ($coupons as $coupon) {
-            $discount = $coupon->type === 'percent' ? "{$coupon->value}% off" : "৳{$coupon->value} off";
-            $minOrder = $coupon->min_order ? ' (min. order ৳'.number_format((float) $coupon->min_order, 0).')' : '';
-            $couponText .= "• **{$coupon->code}** — {$discount}{$minOrder}\n";
-        }
+        $couponData = $eligible->map(function (Coupon $coupon): array {
+            $discountLabel = $coupon->type === 'percent'
+                ? number_format((float) $coupon->value, 0).'% off'
+                : '৳'.number_format((float) $coupon->value, 0).' off';
 
-        $couponText .= "\n🚚 Free shipping on orders above ৳2,000!";
+            return [
+                'code' => $coupon->code,
+                'type' => $coupon->type,
+                'value' => (float) $coupon->value,
+                'discount_label' => $discountLabel,
+                'min_order' => $coupon->min_order ? (float) $coupon->min_order : null,
+                'max_discount' => $coupon->max_discount ? (float) $coupon->max_discount : null,
+                'expires_at' => $coupon->expires_at?->toDateString(),
+            ];
+        })->values()->all();
+
+        $message = count($couponData) === 1
+            ? '🎉 You have a special offer available:'
+            : '🎁 Here are your available coupons:';
 
         return [
-            'message' => $couponText,
-            'type' => 'text',
+            'message' => $message,
+            'type' => 'coupons',
+            'coupons' => $couponData,
             'actions' => [
                 ['label' => 'Shop Now', 'action' => 'link', 'url' => '/shop'],
             ],

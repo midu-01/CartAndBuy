@@ -58,6 +58,25 @@ class AiAssistantTest extends TestCase
             ->assertJsonFragment(['type' => 'text']);
     }
 
+    public function test_natural_language_search_finds_product_with_conversational_phrasing(): void
+    {
+        Product::factory()->create(['name' => 'iPhone 17 Pro', 'is_active' => true]);
+        Product::factory()->create(['name' => 'iPhone 13 Pro', 'is_active' => true]);
+
+        $response = $this->postJson('/ai-assistant/chat', [
+            'message' => 'I want to iPhone 17 pro',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonFragment(['type' => 'products']);
+
+        $products = $response->json('products');
+        $this->assertNotEmpty($products);
+        $this->assertTrue(
+            collect($products)->contains(fn (array $p) => str_contains(strtolower($p['name']), 'iphone 17 pro')),
+        );
+    }
+
     public function test_chat_responds_to_empty_cart(): void
     {
         $response = $this->postJson('/ai-assistant/chat', [
@@ -316,31 +335,47 @@ class AiAssistantTest extends TestCase
 
     // ─── Coupons ──────────────────────────────────────────────────────────────
 
-    public function test_coupon_info_shows_no_coupons_message(): void
+    public function test_coupon_info_requires_login(): void
     {
         $response = $this->postJson('/ai-assistant/chat', ['message' => 'Do you have any coupons?']);
 
         $response->assertOk()
             ->assertJsonFragment(['type' => 'text']);
 
-        $message = strtolower($response->json('message'));
-        $this->assertTrue(str_contains($message, 'coupon') || str_contains($message, 'shipping'));
+        $this->assertStringContainsStringIgnoringCase('log', $response->json('message'));
     }
 
-    public function test_coupon_info_shows_active_coupons(): void
+    public function test_coupon_info_shows_welcome10_for_new_user_with_no_orders(): void
     {
-        Coupon::factory()->create([
-            'code' => 'SAVE10',
-            'type' => 'percent',
-            'value' => 10,
-            'is_active' => true,
-            'expires_at' => now()->addDays(7),
-        ]);
+        $user = User::factory()->create();
+        Coupon::factory()->percent(10)->newCustomersOnly()->create(['code' => 'WELCOME10']);
 
-        $response = $this->postJson('/ai-assistant/chat', ['message' => 'Do you have any discount codes?']);
+        $response = $this->actingAs($user)
+            ->postJson('/ai-assistant/chat', ['message' => 'Do you have any coupons?']);
 
-        $response->assertOk();
-        $this->assertStringContainsString('SAVE10', $response->json('message'));
+        $response->assertOk()
+            ->assertJsonFragment(['type' => 'coupons']);
+
+        $coupons = $response->json('coupons');
+        $this->assertNotEmpty($coupons);
+        $this->assertTrue(
+            collect($coupons)->contains(fn (array $c) => $c['code'] === 'WELCOME10'),
+        );
+    }
+
+    public function test_coupon_info_hidden_for_user_who_has_placed_orders(): void
+    {
+        $user = User::factory()->create();
+        Order::factory()->create(['user_id' => $user->id]);
+        Coupon::factory()->percent(10)->newCustomersOnly()->create(['code' => 'WELCOME10']);
+
+        $response = $this->actingAs($user)
+            ->postJson('/ai-assistant/chat', ['message' => 'Do you have any coupons?']);
+
+        $response->assertOk()
+            ->assertJsonFragment(['type' => 'text']);
+
+        $this->assertStringNotContainsStringIgnoringCase('WELCOME10', $response->json('message'));
     }
 
     // ─── Product Comparison ───────────────────────────────────────────────────

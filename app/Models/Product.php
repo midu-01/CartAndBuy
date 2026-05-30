@@ -159,9 +159,25 @@ class Product extends Model
     /** @param Builder<Product> $query */
     public function scopeSearch(Builder $query, string $term): void
     {
+        // First try exact phrase match to prioritise precise results
         $query->where(function (Builder $q) use ($term): void {
             $q->where('name', 'like', "%{$term}%")
                 ->orWhere('description', 'like', "%{$term}%");
+
+            // Also match each word individually (AND logic) so
+            // "iPhone 17 pro" finds "iPhone 17 Pro Max", etc.
+            $words = array_filter(explode(' ', $term), fn (string $w) => strlen($w) >= 2);
+
+            if (count($words) > 1) {
+                $q->orWhere(function (Builder $sub) use ($words): void {
+                    foreach ($words as $word) {
+                        $sub->where(function (Builder $inner) use ($word): void {
+                            $inner->where('name', 'like', "%{$word}%")
+                                ->orWhere('description', 'like', "%{$word}%");
+                        });
+                    }
+                });
+            }
         });
     }
 

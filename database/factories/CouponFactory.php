@@ -16,9 +16,13 @@ class CouponFactory extends Factory
             'code' => strtoupper(fake()->unique()->lexify('????##')),
             'type' => fake()->randomElement(['percent', 'fixed']),
             'value' => fake()->randomFloat(2, 5, 50),
+            'max_discount' => null,
             'min_order' => 0,
             'max_uses' => null,
             'used_count' => 0,
+            'once_per_customer' => false,
+            'new_customers_only' => false,
+            'user_id' => null,
             'expires_at' => null,
             'is_active' => true,
         ];
@@ -47,5 +51,20 @@ class CouponFactory extends Factory
     public function withMinOrder(float $min): static
     {
         return $this->state(['min_order' => $min]);
+    }
+
+    public function oncePerCustomer(): static
+    {
+        return $this->state(['once_per_customer' => true]);
+    }
+
+    public function newCustomersOnly(): static
+    {
+        return $this->state(['new_customers_only' => true]);
+    }
+
+    public function forUser(int $userId): static
+    {
+        return $this->state(['user_id' => $userId]);
     }
 }

@@ -104,7 +104,7 @@ export default function AdminDashboardPage({ stats, recentOrders, topProducts, m
                             {recentOrders.map((order) => (
                                 <tr key={order.id} className="hover:bg-gray-50">
                                     <td className="px-5 py-3"><Link href={`/admin/orders/${order.id}`} className="text-[#e94560] hover:underline font-medium">#{order.id}</Link></td>
-                                    <td className="px-5 py-3"><div className="font-medium">{order.user.name}</div><div className="text-xs text-gray-400">{order.user.email}</div></td>
+                                    <td className="px-5 py-3"><div className="font-medium">{order.user?.name ?? 'Deleted User'}</div><div className="text-xs text-gray-400">{order.user?.email ?? '—'}</div></td>
                                     <td className="px-5 py-3"><Badge className={`border-0 capitalize ${statusColors[order.status] ?? 'bg-gray-100 text-gray-700'}`}>{order.status}</Badge></td>
                                     <td className="px-5 py-3 text-right font-bold">৳{Number(order.total).toFixed(2)}</td>
                                     <td className="px-5 py-3 text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
